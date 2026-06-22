@@ -1,0 +1,518 @@
+{% extends "base.html" %}
+{% set active_page = "about" %}
+
+{% block title %}Die Bibel - Über das Projekt{% endblock %}
+
+{% block head_extra %}
+<style>
+        .header {
+            background: var(--ubuntu-aubergine);
+            color: var(--ubuntu-white);
+            padding: 2rem 0;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 300;
+            margin-bottom: 0.5rem;
+            color: var(--ubuntu-white);
+        }
+
+        .header .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 20px;
+        }
+
+        .content-section {
+            background: var(--ubuntu-white);
+            padding: 3rem;
+            border-radius: 4px;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            font-size: 2rem;
+            color: var(--ubuntu-aubergine);
+            font-weight: 300;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .section-content {
+            color: var(--ubuntu-text);
+            font-size: 1.1rem;
+            line-height: 1.8;
+            margin-bottom: 2rem;
+            text-align: justify;
+        }
+
+        .section-content:last-child {
+            margin-bottom: 0;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+
+        .feature-item {
+            background: #fafafa;
+            padding: 2rem;
+            border-radius: 4px;
+            border-left: 4px solid var(--ubuntu-orange);
+            text-align: center;
+        }
+
+        .feature-item:nth-child(2n) {
+            border-left-color: var(--ubuntu-aubergine);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-title {
+            font-size: 1.3rem;
+            color: var(--ubuntu-aubergine);
+            font-weight: 400;
+            margin-bottom: 1rem;
+        }
+
+        .feature-description {
+            color: var(--ubuntu-dark-grey);
+            line-height: 1.6;
+        }
+
+        .tech-stack {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .tech-item {
+            background: #f0f9ff;
+            padding: 1.5rem;
+            border-radius: 4px;
+            border-left: 3px solid var(--ubuntu-orange);
+            text-align: center;
+        }
+
+        .tech-name {
+            font-size: 1.2rem;
+            color: var(--ubuntu-aubergine);
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .tech-description {
+            color: var(--ubuntu-dark-grey);
+            font-size: 0.9rem;
+        }
+
+        .translation-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .translation-item {
+            background: #fff8f5;
+            padding: 1rem;
+            border-radius: 4px;
+            border-left: 3px solid var(--ubuntu-orange);
+            text-align: center;
+        }
+
+        .translation-name {
+            font-weight: 500;
+            color: var(--ubuntu-aubergine);
+            margin-bottom: 0.5rem;
+        }
+
+        .translation-description {
+            font-size: 0.9rem;
+            color: var(--ubuntu-dark-grey);
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, var(--ubuntu-orange) 0%, #c73e0f 100%);
+            color: var(--ubuntu-white);
+            padding: 2rem;
+            border-radius: 8px;
+            text-align: center;
+            margin: 2rem 0;
+        }
+
+        .highlight-title {
+            font-size: 1.5rem;
+            font-weight: 300;
+            margin-bottom: 1rem;
+        }
+
+        .highlight-text {
+            font-size: 1.1rem;
+            opacity: 0.95;
+        }
+
+        .contact-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+
+        .contact-item {
+            background: #fafafa;
+            padding: 2rem;
+            border-radius: 4px;
+            text-align: center;
+            border-left: 4px solid var(--ubuntu-warm-grey);
+        }
+
+        .contact-icon {
+            font-size: 2rem;
+            color: var(--ubuntu-orange);
+            margin-bottom: 1rem;
+        }
+
+        .contact-title {
+            font-size: 1.2rem;
+            color: var(--ubuntu-aubergine);
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .contact-info {
+            color: var(--ubuntu-dark-grey);
+        }
+
+        .contact-link {
+            color: var(--ubuntu-orange);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .contact-link:hover {
+            color: var(--ubuntu-aubergine);
+        }
+
+        .version-info {
+            background: #f5f5f5;
+            padding: 1.5rem;
+            border-radius: 4px;
+            text-align: center;
+            margin: 2rem 0;
+            border: 1px solid #e5e5e5;
+        }
+
+        .version-number {
+            font-size: 1.5rem;
+            color: var(--ubuntu-orange);
+            font-weight: 300;
+            margin-bottom: 0.5rem;
+        }
+
+        .version-date {
+            color: var(--ubuntu-warm-grey);
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .container {
+                padding: 1rem 10px;
+            }
+
+            .content-section {
+                padding: 2rem 1.5rem;
+            }
+
+            .section-title {
+                font-size: 1.7rem;
+            }
+
+            .section-content {
+                font-size: 1rem;
+                text-align: left;
+            }
+
+            .feature-grid,
+            .tech-stack,
+            .translation-list,
+            .contact-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Ubuntu-style transitions */
+        * {
+            transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+        }
+    
+</style>
+{% endblock %}
+
+{% block content %}
+    <div class="header">
+        <div class="header-content">
+            <h1>Über das Projekt</h1>
+            <p class="subtitle">Informationen über diese Bibel-Anwendung</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="content-section">
+            <h2 class="section-title">Willkommen zur digitalen Bibel</h2>
+            <div class="section-content">
+                Diese Webanwendung wurde entwickelt, um das Studium der Heiligen Schrift zu erleichtern und zu vertiefen. 
+                Sie bietet Zugang zu verschiedenen deutschen Bibelübersetzungen mit modernen Suchfunktionen und 
+                Analysewerkzeugen. Unser Ziel ist es, eine benutzerfreundliche und umfassende Plattform für 
+                Bibelstudium, Recherche und spirituelle Erbauung zu schaffen.
+            </div>
+            <div class="section-content">
+                Die Anwendung richtet sich an Theologen, Pastoren, Bibelschüler und alle, die sich für ein
+                tieferes Verständnis der biblischen Texte interessieren. Durch die Kombination klassischer
+                Bibelübersetzungen mit moderner Suche, Wortzählung und Strong-Konkordanz entstehen neue
+                Möglichkeiten der Texterschließung und des Bibelstudiums – direkt im Browser, ohne
+                Installation zusätzlicher Software.
+            </div>
+        </div>
+
+        <div class="content-section">
+            <h2 class="section-title">Hauptfunktionen</h2>
+            <div class="feature-grid">
+                <div class="feature-item">
+                    <div class="feature-icon">📖</div>
+                    <h3 class="feature-title">Bibel lesen</h3>
+                    <p class="feature-description">
+                        Kapitelweises Lesen in vier Übersetzungen mit intuitiver
+                        Navigation zwischen Büchern und Kapiteln sowie direkter
+                        Kapitelnavigation vor und zurück.
+                    </p>
+                </div>
+
+                <div class="feature-item">
+                    <div class="feature-icon">🔍</div>
+                    <h3 class="feature-title">Volltextsuche</h3>
+                    <p class="feature-description">
+                        Suche über alle Übersetzungen oder gezielt in einem Buch.
+                        Unterstützt exakte Phrasen (<code>"Text"</code>),
+                        Groß-/Kleinschreibung (<code>`Text`</code>)
+                        und Mehrwortsuche (<code>f Wort1 Wort2</code>).
+                    </p>
+                </div>
+
+                <div class="feature-item">
+                    <div class="feature-icon">📊</div>
+                    <h3 class="feature-title">Wortzählung</h3>
+                    <p class="feature-description">
+                        Zählt alle Wörter in einem frei wählbaren Bibelabschnitt
+                        (von Buch/Kapitel/Vers bis Buch/Kapitel/Vers) mit
+                        automatischer Filterung häufiger Füllwörter.
+                    </p>
+                </div>
+
+                <div class="feature-item">
+                    <div class="feature-icon">🔑</div>
+                    <h3 class="feature-title">Strong-Konkordanz</h3>
+                    <p class="feature-description">
+                        Vollständige Luther-1912-Konkordanz mit 14.176 hebräischen
+                        und griechischen Einträgen. Suche nach Strong-Nummer oder
+                        deutschem Wort, alle Bibelstellen per Klick mit Textvorschau
+                        direkt im Popup.
+                    </p>
+                </div>
+
+                <div class="feature-item">
+                    <div class="feature-icon">⚖️</div>
+                    <h3 class="feature-title">Parallelvergleich</h3>
+                    <p class="feature-description">
+                        Alle vier Übersetzungen nebeneinander für denselben
+                        Abschnitt – ideal für Textvergleich und Exegese.
+                    </p>
+                </div>
+
+                <div class="feature-item">
+                    <div class="feature-icon">🎯</div>
+                    <h3 class="feature-title">Responsive Design</h3>
+                    <p class="feature-description">
+                        Optimiert für Desktop, Tablet und Smartphone.
+                        Ubuntu-Designsprache mit konsistenter Farbgebung
+                        und klarer Typografie auf allen Seiten.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            <h3 class="highlight-title">Moderne Technologie trifft zeitlose Weisheit</h3>
+            <p class="highlight-text">
+                Diese Anwendung verbindet die bewährte Weisheit der Heiligen Schrift mit 
+                modernsten Webtechnologien, um Ihnen das bestmögliche Bibelstudium-Erlebnis zu bieten.
+            </p>
+        </div>
+
+        <div class="content-section">
+            <h2 class="section-title">Technische Details</h2>
+            <div class="section-content">
+                Die Anwendung ist als lokale Python-Webanwendung konzipiert und läuft vollständig
+                ohne Datenbankserver. Alle Bibeltexte werden beim Start aus Textdateien in den
+                Arbeitsspeicher geladen und stehen anschließend über eine REST-API zur Verfügung.
+                Die Strong-Konkordanz basiert auf dem Zefania-XML-Format von toledot.info.
+            </div>
+
+            <div class="tech-stack">
+                <div class="tech-item">
+                    <div class="tech-name">Python 3 & FastAPI</div>
+                    <div class="tech-description">Backend und REST-API – hochperformant, typsicher</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-name">Uvicorn</div>
+                    <div class="tech-description">ASGI-Webserver mit Hot-Reload für die Entwicklung</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-name">Jinja2</div>
+                    <div class="tech-description">Template-Engine für das serverseitige HTML-Rendering</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-name">HTML5, CSS3 & JavaScript</div>
+                    <div class="tech-description">Modernes, reines Frontend ohne externe Frameworks</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-name">Zefania XML</div>
+                    <div class="tech-description">Dateiformat für die Luther-1912-Strong-Konkordanz (14.176 Einträge)</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-name">RESTful API</div>
+                    <div class="tech-description">Saubere Endpunkte für Texte, Suche, Wortzählung und Konkordanz</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-section">
+            <h2 class="section-title">Verfügbare Übersetzungen</h2>
+            <div class="section-content">
+                Die Anwendung enthält vier vollständige Bibelübersetzungen mit je 66 Büchern und
+                insgesamt über 31.000 Versen. Alle drei deutschen Übersetzungen sind vollständig
+                im Public Domain und können ohne Einschränkungen genutzt werden.
+            </div>
+
+            <div class="translation-list">
+                <div class="translation-item">
+                    <div class="translation-name">Luther 1912</div>
+                    <div class="translation-description">Die klassische Lutherbibel von 1912 in neuer Rechtschreibung – Grundlage der Strong-Konkordanz in dieser Anwendung. 66 Bücher, 31.102 Verse. Public Domain.</div>
+                </div>
+                <div class="translation-item">
+                    <div class="translation-name">Schlachter 1951</div>
+                    <div class="translation-description">Die Schlachter-Bibel von 1951 – eine wortgetreue, stilistisch klare Übersetzung. 66 Bücher, 31.117 Verse. Nutzung für nicht-kommerzielle Zwecke gestattet.</div>
+                </div>
+                <div class="translation-item">
+                    <div class="translation-name">Elberfelder 1905</div>
+                    <div class="translation-description">Die Elberfelder Bibel von 1905 – bekannt für ihre wörtliche Treue zum Grundtext. 66 Bücher, 31.102 Verse. Public Domain.</div>
+                </div>
+                <div class="translation-item">
+                    <div class="translation-name">World English Bible (WEB)</div>
+                    <div class="translation-description">Eine moderne englische Übersetzung für den weltweiten Einsatz, vollständig im Public Domain. 66 Bücher, 31.098 Verse.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-section">
+            <h2 class="section-title">Lizenz und Rechtliches</h2>
+            <div class="section-content">
+                Die Luther-1912-Übersetzung, die Elberfelder-1905-Übersetzung und die World English Bible
+                sind gemeinfrei (Public Domain) und können ohne Einschränkungen genutzt werden.
+                Die Schlachter-Bibel 1951 darf für nicht-kommerzielle Zwecke frei verwendet werden.
+                Die Strong-Konkordanz-Daten stammen von toledot.info (Zefania XML Format, Stand 2022)
+                und werden ebenfalls für nicht-kommerzielle Zwecke genutzt.
+            </div>
+            <div class="section-content">
+                Der Quellcode der Anwendung steht unter einer Open-Source-Lizenz zur Verfügung.
+                Alle Bibeltexte und Konkordanzdaten unterliegen den Lizenzbedingungen ihrer
+                jeweiligen Quellen. Die Nutzung dieser Anwendung erfolgt ausschließlich für
+                nicht-kommerzielle, bildungsorientierte und spirituelle Zwecke.
+            </div>
+        </div>
+
+        <div class="content-section">
+            <h2 class="section-title">Kontakt und Mitwirkung</h2>
+            <div class="section-content">
+                Wir freuen uns über Feedback, Anregungen und Beiträge zur Weiterentwicklung 
+                dieser Bibel-Anwendung. Als Open-Source-Projekt lebt es von der Beteiligung 
+                der Gemeinschaft und dem Austausch mit Nutzern und Entwicklern.
+            </div>
+            
+            <div class="contact-grid">
+                <div class="contact-item">
+                    <div class="contact-icon">💻</div>
+                    <h3 class="contact-title">Entwicklung</h3>
+                    <p class="contact-info">
+                        <a href="https://gitlab.com/epp-group/pyble" class="contact-link">GitHub Repository</a><br>
+                        Tragen Sie zur Entwicklung bei
+                    </p>
+                </div>
+                <div class="contact-item">
+                    <div class="contact-icon">🐛</div>
+                    <h3 class="contact-title">Fehler melden</h3>
+                    <p class="contact-info">
+                        <a href="https://gitlab.com/epp-group/pyble/-/issues" class="contact-link">Issue Tracker</a><br>
+                        Berichten Sie Bugs oder Probleme
+                    </p>
+                </div>
+                <div class="contact-item">
+                    <div class="contact-icon">💡</div>
+                    <h3 class="contact-title">Vorschläge</h3>
+                    <p class="contact-info">
+                        <a href="https://gitlab.com/epp-group/pyble/-/issues/new" class="contact-link">Feature Requests</a><br>
+                        Teilen Sie Ihre Ideen mit uns
+                    </p>
+                </div>
+                <div class="contact-item">
+                    <div class="contact-icon">📧</div>
+                    <h3 class="contact-title">Direkter Kontakt</h3>
+                    <p class="contact-info">
+                        <a href="mailto:hjstephan86@gmail.com" class="contact-link">hjstephan86@gmail.com</a><br>
+                        Für allgemeine Anfragen
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="version-info">
+            <div class="version-number">Version 2.1</div>
+            <div class="version-date">Veröffentlicht im Jahr 2026</div>
+        </div>
+
+        <div class="highlight-box">
+            <h3 class="highlight-title">Dank und Anerkennung</h3>
+            <p class="highlight-text">
+                Unser Dank gilt allen Bibelgesellschaften, Übersetzern und Verlagen, die ihre Arbeit 
+                für digitale Anwendungen zur Verfügung stellen, sowie der Open-Source-Gemeinschaft, 
+                die die technischen Grundlagen für dieses Projekt bereitgestellt hat.
+            </p>
+        </div>
+    </div>
+{% endblock %}
