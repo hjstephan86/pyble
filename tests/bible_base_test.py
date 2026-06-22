@@ -3,7 +3,7 @@ from unittest.mock import mock_open, patch
 from src.bible_base import Bible
 
 
-class TestBible(Bible):
+class BibleStub(Bible):
     """Concrete implementation of Bible for testing"""
     
     def load_text(self, file_path: str) -> None:
@@ -26,12 +26,12 @@ class TestBibleBase(unittest.TestCase):
     
     def setUp(self):
         """Set up test fixtures"""
-        self.bible = TestBible("Test Bible")
+        self.bible = BibleStub("Test Bible")
         self.bible.load_text("test_path")
     
     def test_init(self):
         """Test Bible initialization"""
-        bible = TestBible("Test Name")
+        bible = BibleStub("Test Name")
         self.assertEqual(bible.name, "Test Name")
         self.assertEqual(bible.books, {})
     
@@ -117,7 +117,7 @@ class TestBibleBase(unittest.TestCase):
     
     def test_parse_text_standard_format(self):
         """Test parsing text in standard format"""
-        bible = TestBible("Test")
+        bible = BibleStub("Test")
         content = "1. Mose 1:1 Im Anfang schuf Gott die Himmel und die Erde."
         bible._parse_text(content)
         
@@ -126,7 +126,7 @@ class TestBibleBase(unittest.TestCase):
     
     def test_parse_text_alternative_format(self):
         """Test parsing text in alternative format"""
-        bible = TestBible("Test")
+        bible = BibleStub("Test")
         content = "1Mos 1:1 Im Anfang schuf Gott die Himmel und die Erde."
         bible._parse_text(content)
         
@@ -135,7 +135,7 @@ class TestBibleBase(unittest.TestCase):
     
     def test_parse_text_hash_format(self):
         """Test parsing text in hash-separated format"""
-        bible = TestBible("Test")
+        bible = BibleStub("Test")
         content = "0#1. Mose#1#1#Im Anfang schuf Gott die Himmel und die Erde."
         bible._parse_text(content)
         
@@ -144,7 +144,7 @@ class TestBibleBase(unittest.TestCase):
     
     def test_parse_text_empty_lines(self):
         """Test parsing text with empty lines"""
-        bible = TestBible("Test")
+        bible = BibleStub("Test")
         content = """
         
 0#1. Mose#1#1#Im Anfang schuf Gott die Himmel und die Erde.
@@ -161,7 +161,7 @@ class TestBibleBase(unittest.TestCase):
     
     def test_parse_text_invalid_format(self):
         """Test parsing text with invalid format"""
-        bible = TestBible("Test")
+        bible = BibleStub("Test")
         content = "This is not a valid bible verse format"
         bible._parse_text(content)
         
@@ -170,7 +170,7 @@ class TestBibleBase(unittest.TestCase):
     
     def test_normalize_german_book_name_abbreviations(self):
         """Test normalization of German book name abbreviations"""
-        bible = TestBible("Test")
+        bible = BibleStub("Test")
         
         # Test common abbreviations
         self.assertEqual(bible._normalize_german_book_name("1Mos"), "1. Mose")
@@ -180,7 +180,7 @@ class TestBibleBase(unittest.TestCase):
     
     def test_normalize_german_book_name_full_names(self):
         """Test normalization of full German book names"""
-        bible = TestBible("Test")
+        bible = BibleStub("Test")
         
         # Test full names (should remain unchanged)
         self.assertEqual(bible._normalize_german_book_name("1. Mose"), "1. Mose")
@@ -188,7 +188,7 @@ class TestBibleBase(unittest.TestCase):
     
     def test_normalize_german_book_name_unknown(self):
         """Test normalization of unknown book names"""
-        bible = TestBible("Test")
+        bible = BibleStub("Test")
         
         # Unknown names should remain unchanged
         self.assertEqual(bible._normalize_german_book_name("UnknownBook"), "UnknownBook")

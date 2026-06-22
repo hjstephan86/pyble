@@ -22,7 +22,7 @@ dev = [
     "playwright",
     "requests",
     "coverage",
-    "httpx",
+    "httpx2",
 ]
 
 [tool.coverage.run]
