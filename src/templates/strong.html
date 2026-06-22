@@ -1,0 +1,906 @@
+{% extends "base.html" %}
+{% set active_page = "strong" %}
+
+{% block title %}Die Bibel - Strong-Nummern{% endblock %}
+
+{% block head_extra %}
+<style>
+        .header {
+            background: var(--ubuntu-aubergine);
+            color: var(--ubuntu-white);
+            padding: 2rem 0;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 300;
+            margin-bottom: 0.5rem;
+            color: var(--ubuntu-white);
+        }
+
+        .header .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 20px;
+        }
+
+        .strong-section {
+            background: var(--ubuntu-white);
+            padding: 2rem;
+            border-radius: 4px;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .strong-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .strong-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: end;
+        }
+
+        .strong-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .strong-group.full-width {
+            flex: 100%;
+        }
+
+        label {
+            display: block;
+            font-weight: 400;
+            color: var(--ubuntu-dark-grey);
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        input, select, button {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d1d1;
+            border-radius: 2px;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: all 0.2s ease;
+        }
+
+        input[type="text"] {
+            background: var(--ubuntu-white);
+            color: var(--ubuntu-text);
+        }
+
+        input[type="text"]:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--ubuntu-orange);
+            box-shadow: 0 0 0 2px rgba(221, 72, 20, 0.2);
+        }
+
+        select {
+            background: var(--ubuntu-white);
+            color: var(--ubuntu-text);
+        }
+
+        button {
+            background: var(--ubuntu-orange);
+            color: var(--ubuntu-white);
+            border: none;
+            cursor: pointer;
+            font-weight: 400;
+        }
+
+        button:hover:not(:disabled) {
+            background: #c73e0f;
+        }
+
+        button:disabled {
+            background: var(--ubuntu-warm-grey);
+            cursor: not-allowed;
+        }
+
+        .results-section {
+            background: var(--ubuntu-white);
+            padding: 2rem;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            min-height: 400px;
+        }
+
+        .loading {
+            text-align: center;
+            color: var(--ubuntu-warm-grey);
+            font-style: italic;
+            padding: 3rem;
+            font-size: 1.1rem;
+        }
+
+        .strong-result {
+            margin-bottom: 2rem;
+            padding: 2rem;
+            background: #fafafa;
+            border-left: 4px solid var(--ubuntu-orange);
+            border-radius: 0 4px 4px 0;
+        }
+
+        .strong-number {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--ubuntu-orange);
+            margin-bottom: 1rem;
+        }
+
+        .strong-word {
+            font-size: 1.3rem;
+            font-weight: 500;
+            color: var(--ubuntu-aubergine);
+            margin-bottom: 0.5rem;
+        }
+
+        .strong-transliteration {
+            font-style: italic;
+            color: var(--ubuntu-warm-grey);
+            margin-bottom: 1rem;
+        }
+
+        .strong-definition {
+            color: var(--ubuntu-text);
+            line-height: 1.7;
+            margin-bottom: 1rem;
+        }
+
+        .strong-etymology {
+            background: #f0f9ff;
+            padding: 1rem;
+            border-radius: 4px;
+            border-left: 3px solid var(--ubuntu-aubergine);
+            margin-bottom: 1rem;
+        }
+
+        .strong-etymology h4 {
+            color: var(--ubuntu-aubergine);
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .strong-usage {
+            background: #fff8f5;
+            padding: 1rem;
+            border-radius: 4px;
+            border-left: 3px solid var(--ubuntu-orange);
+        }
+
+        .strong-usage h4 {
+            color: var(--ubuntu-orange);
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .verse-example {
+            margin: 0.5rem 0;
+            padding: 1rem;
+            background: var(--ubuntu-white);
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+
+        .verse-reference {
+            font-weight: 600;
+            color: var(--ubuntu-orange);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .verse-text {
+            color: var(--ubuntu-text);
+            line-height: 1.6;
+        }
+
+        .strong-highlight {
+            background: rgba(221, 72, 20, 0.2);
+            padding: 2px 4px;
+            border-radius: 2px;
+            font-weight: 500;
+        }
+
+        .search-tabs {
+            display: flex;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #e5e5e5;
+        }
+
+        .tab-button {
+            background: none;
+            border: none;
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            font-size: 1rem;
+            color: var(--ubuntu-warm-grey);
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .tab-button.active {
+            color: var(--ubuntu-orange);
+            border-bottom-color: var(--ubuntu-orange);
+        }
+
+        .tab-button:hover {
+            color: var(--ubuntu-aubergine);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .error {
+            background: #fdf2f2;
+            color: #c53030;
+            padding: 1.5rem;
+            border-radius: 2px;
+            border-left: 3px solid #c53030;
+            margin: 1rem 0;
+        }
+
+        .info {
+            background: #f0f9ff;
+            color: var(--ubuntu-dark-grey);
+            padding: 2rem;
+            border-radius: 2px;
+            border-left: 3px solid var(--ubuntu-orange);
+            text-align: center;
+        }
+
+        .info h3 {
+            color: var(--ubuntu-aubergine);
+            font-weight: 300;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .container {
+                padding: 1rem 10px;
+            }
+
+            .strong-row {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .strong-group {
+                min-width: auto;
+                width: 100%;
+            }
+
+            .search-tabs {
+                flex-direction: column;
+            }
+
+            .tab-button {
+                text-align: left;
+                border-bottom: 1px solid #e5e5e5;
+                border-right: none;
+            }
+
+            .tab-button.active {
+                border-bottom-color: #e5e5e5;
+                border-left: 3px solid var(--ubuntu-orange);
+            }
+        }
+
+        /* Ubuntu-style transitions */
+        * {
+            transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+        }
+    
+</style>
+<style>
+
+        /* ── Popup / Modal ── */
+        .popup-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(44,0,30,0.45);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        .popup-overlay.active { display: flex; }
+
+        .popup {
+            background: var(--ubuntu-white);
+            border-radius: 4px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+            max-width: 680px;
+            width: 95vw;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .popup-header {
+            background: var(--ubuntu-aubergine);
+            color: var(--ubuntu-white);
+            padding: 0.85rem 1.25rem;
+            position: relative;
+            flex-shrink: 0;
+            min-height: 3rem;
+        }
+
+        .popup-header h3 {
+            font-weight: 300;
+            font-size: 1.05rem;
+            margin: 0;
+            padding-right: 2.5rem;
+            line-height: 1.35;
+        }
+
+        .popup-close {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 2.75rem;
+            height: 100%;
+            background: none;
+            border: none;
+            color: var(--ubuntu-white);
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            transition: background-color 0.15s;
+        }
+
+        .popup-close:hover {
+            background: rgba(0,0,0,0.2);
+            color: var(--ubuntu-white);
+        }
+
+        .popup-body {
+            padding: 1rem 1.25rem;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .popup-intro {
+            font-size: 0.9rem;
+            color: var(--ubuntu-dark-grey);
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .ref-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 0.4rem;
+        }
+
+        .ref-btn {
+            background: #f7f7f7;
+            border: 1px solid #e5e5e5;
+            border-radius: 3px;
+            padding: 0.35rem 0.6rem;
+            font-size: 0.82rem;
+            cursor: pointer;
+            text-align: left;
+            color: var(--ubuntu-aubergine);
+            transition: background 0.15s, border-color 0.15s;
+        }
+
+        .ref-btn:hover {
+            background: var(--ubuntu-orange);
+            color: var(--ubuntu-white);
+            border-color: var(--ubuntu-orange);
+        }
+
+        .popup-footer {
+            padding: 0.75rem 1.25rem;
+            border-top: 1px solid #e5e5e5;
+            font-size: 0.8rem;
+            color: var(--ubuntu-warm-grey);
+            flex-shrink: 0;
+        }
+
+        /* ── Ergebnisse ── */
+        .strong-result-card {
+            background: var(--ubuntu-white);
+            border-radius: 4px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+        }
+
+        .strong-result-card h2 {
+            font-weight: 300;
+            color: var(--ubuntu-aubergine);
+            font-size: 1.5rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .strong-meta {
+            font-size: 0.85rem;
+            color: var(--ubuntu-dark-grey);
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .strong-badge {
+            display: inline-block;
+            background: var(--ubuntu-aubergine);
+            color: white;
+            font-size: 0.78rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-right: 0.5rem;
+        }
+
+        .usage-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .usage-table th {
+            text-align: left;
+            padding: 0.5rem 0.75rem;
+            background: #f7f7f7;
+            font-weight: 500;
+            color: var(--ubuntu-dark-grey);
+            border-bottom: 2px solid #e5e5e5;
+        }
+
+        .usage-table td {
+            padding: 0.5rem 0.75rem;
+            border-bottom: 1px solid #f0f0f0;
+            vertical-align: middle;
+        }
+
+        .usage-table tr:last-child td { border-bottom: none; }
+
+        .refs-open-btn {
+            background: none;
+            border: 1px solid var(--ubuntu-orange);
+            color: var(--ubuntu-orange);
+            border-radius: 3px;
+            padding: 0.2rem 0.65rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .refs-open-btn:hover {
+            background: var(--ubuntu-orange);
+            color: white;
+        }
+
+        .count-pill {
+            display: inline-block;
+            background: #e5e5e5;
+            color: var(--ubuntu-dark-grey);
+            border-radius: 12px;
+            padding: 1px 10px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .word-search-result {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 0.75rem;
+            align-items: center;
+            padding: 0.75rem;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+        }
+
+        .word-search-result:last-child { border-bottom: none; }
+        .word-search-result:hover { background: #f7f7f7; }
+
+        .word-strong-id {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--ubuntu-aubergine);
+            min-width: 55px;
+        }
+
+        .word-strong-title {
+            font-size: 0.9rem;
+            color: var(--ubuntu-dark-grey);
+        }
+
+        .word-strong-translations {
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 0.1rem;
+        }
+
+        .ref-btn-loaded {
+            border-color: var(--ubuntu-aubergine);
+            color: var(--ubuntu-aubergine);
+        }
+
+        .ref-verse-preview {
+            grid-column: 1 / -1;
+            background: #fdf6f0;
+            border-left: 3px solid var(--ubuntu-orange);
+            padding: 0.75rem 1rem;
+            font-size: 0.9rem;
+            color: var(--ubuntu-dark-grey);
+            border-radius: 0 3px 3px 0;
+            line-height: 1.6;
+            margin-top: 0.15rem;
+        }
+
+        .ref-verse-preview strong {
+            display: block;
+            color: var(--ubuntu-aubergine);
+            font-size: 0.8rem;
+            margin-bottom: 0.3rem;
+            font-weight: 500;
+        }
+
+        .ref-read-link {
+            display: inline-block;
+            margin-top: 0.5rem;
+            font-size: 0.82rem;
+            color: var(--ubuntu-orange);
+            text-decoration: none;
+            border-bottom: 1px solid rgba(221,72,20,0.4);
+            transition: color 0.15s, border-color 0.15s;
+        }
+
+        .ref-read-link:hover {
+            color: #c73e0f;
+            border-bottom-color: #c73e0f;
+        }
+    
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Popup/Modal für Bibelstellen-Referenzen -->
+    <div class="popup-overlay" id="refPopup">
+        <div class="popup">
+            <div class="popup-header">
+                <h3 id="popupTitle">Bibelstellen</h3>
+                <button class="popup-close" onclick="closePopup()" title="Schließen">✕</button>
+            </div>
+            <div class="popup-body">
+                <p class="popup-intro" id="popupIntro"></p>
+                <div class="ref-grid" id="refGrid"></div>
+            </div>
+            <div class="popup-footer" id="popupFooter"></div>
+        </div>
+    </div>
+    <div class="header">
+        <div class="header-content">
+            <h1>Strong-Konkordanz</h1>
+            <p class="subtitle">Luther 1912 – Hebräische &amp; Griechische Wörter mit allen Bibelstellen</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="strong-section">
+            <div class="search-tabs">
+                <button class="tab-button active" onclick="strongLookup.switchTab('number')">Nach Nummer suchen</button>
+                <button class="tab-button" onclick="strongLookup.switchTab('word')">Nach Wort suchen</button>
+            </div>
+
+            <div class="tab-content active" id="number-tab">
+                <form class="strong-form" id="numberForm">
+                    <div class="strong-row">
+                        <div class="strong-group">
+                            <label for="strongNumber">Strong-Nummer:</label>
+                            <input type="text" id="strongNumber" placeholder="z.B. H1, G25, 430 …" required>
+                        </div>
+                        <div class="strong-group" style="flex:0 0 auto;min-width:auto;">
+                            <button type="submit">Nachschlagen</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="tab-content" id="word-tab">
+                <form class="strong-form" id="wordForm">
+                    <div class="strong-row">
+                        <div class="strong-group">
+                            <label for="strongWord">Deutsches Wort (Luther 1912):</label>
+                            <input type="text" id="strongWord" placeholder="z.B. Liebe, Gott, Vater …" required>
+                        </div>
+                        <div class="strong-group">
+                            <label for="language">Sprache:</label>
+                            <select id="language">
+                                <option value="">Alle Sprachen</option>
+                                <option value="hebrew">Hebräisch (AT)</option>
+                                <option value="greek">Griechisch (NT)</option>
+                            </select>
+                        </div>
+                        <div class="strong-group" style="flex:0 0 auto;min-width:auto;">
+                            <button type="submit">Suchen</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="results-section" id="resultsSection">
+            <div class="info">
+                <h3>Luther 1912 – Strong-Konkordanz</h3>
+                <p>Jeder Eintrag zeigt alle deutschen Übersetzungsvarianten eines hebräischen oder griechischen Wortes in Luther 1912 – mit Anzahl der Vorkommen und direkten Links zu allen Bibelstellen.</p>
+                <p style="margin-top:1rem;font-size:0.9rem;">
+                    <strong>H-Nummern:</strong> Hebräische Wörter (Altes Testament)<br>
+                    <strong>G-Nummern:</strong> Griechische Wörter (Neues Testament)<br>
+                    <strong>Tipp:</strong> Klicken Sie auf „Stellen anzeigen" um alle Bibelstellen als navigierbares Popup zu öffnen.
+                </p>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── Navigation ──────────────────────────────────────────────────
+        const burgerMenu = document.getElementById('burger-menu');
+        const navMenu    = document.getElementById('nav-menu');
+        burgerMenu.addEventListener('click', () => {
+            burgerMenu.classList.toggle('active');
+            navMenu.classList.toggle('active');
+        });
+
+        // ── Popup ────────────────────────────────────────────────────────
+        function openRefPopup(title, intro, refs) {
+            document.getElementById('popupTitle').textContent = title;
+            document.getElementById('popupIntro').textContent = intro;
+            document.getElementById('popupFooter').textContent =
+                `${refs.length} Bibelstelle${refs.length !== 1 ? 'n' : ''} – Klicken Sie eine Stelle an, um den Vers anzuzeigen`;
+
+            const grid = document.getElementById('refGrid');
+            grid.innerHTML = '';
+            refs.forEach(ref => {
+                const btn = document.createElement('button');
+                btn.className = 'ref-btn';
+                btn.textContent = ref.label;
+                btn.title = ref.label;
+                btn.addEventListener('click', async () => {
+                    btn.disabled = true;
+                    btn.textContent = '…';
+                    try {
+                        const res = await fetch(
+                            `/api/Luther 1912/${encodeURIComponent(ref.book_api)}/${ref.chapter}/${ref.verse}`
+                        );
+                        if (res.ok) {
+                            const data = await res.json();
+                            btn.textContent = ref.label;
+                            btn.classList.add('ref-btn-loaded');
+                            // Vorherige Vorschau entfernen
+                            const existing = grid.querySelector('.ref-verse-preview');
+                            if (existing) existing.remove();
+                            // Link zu read.html mit Highlight-Parameter bauen
+                            const readUrl = `/read?translation=Luther+1912&book=${encodeURIComponent(ref.book_api)}&chapter=${ref.chapter}&verse=${ref.verse}&highlight=1`;
+                            // Neue Vorschau direkt nach dem Button einfügen (grid-column: 1/-1)
+                            const preview = document.createElement('div');
+                            preview.className = 'ref-verse-preview';
+                            preview.innerHTML = `<strong>${ref.label}</strong>${data.text}<br><a class="ref-read-link" href="${readUrl}" target="_blank" title="Kapitel in read.html öffnen und Vers hervorheben">lesen</a>`;
+                            btn.insertAdjacentElement('afterend', preview);
+                            // Vorschau in den sichtbaren Bereich scrollen
+                            preview.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        }
+                    } catch (e) {
+                        btn.textContent = ref.label;
+                    }
+                    btn.disabled = false;
+                });
+                grid.appendChild(btn);
+            });
+
+            document.getElementById('refPopup').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closePopup() {
+            document.getElementById('refPopup').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // Klick außerhalb schließt Popup
+        document.getElementById('refPopup').addEventListener('click', e => {
+            if (e.target === e.currentTarget) closePopup();
+        });
+
+        // Escape-Taste schließt Popup
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') closePopup();
+        });
+
+        // ── StrongLookup Klasse ─────────────────────────────────────────
+        class StrongLookup {
+            constructor() {
+                this.currentTab = 'number';
+                document.getElementById('numberForm').addEventListener('submit', e => {
+                    e.preventDefault(); this.lookupByNumber();
+                });
+                document.getElementById('wordForm').addEventListener('submit', e => {
+                    e.preventDefault(); this.lookupByWord();
+                });
+            }
+
+            switchTab(tabName) {
+                document.querySelectorAll('.search-tabs .tab-button').forEach((btn, i) => {
+                    btn.classList.toggle('active', i === (tabName === 'number' ? 0 : 1));
+                });
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                document.getElementById(`${tabName}-tab`).classList.add('active');
+                this.currentTab = tabName;
+            }
+
+            async lookupByNumber() {
+                const num = document.getElementById('strongNumber').value.trim();
+                if (!num) return;
+                this.showLoading('Wird nachgeschlagen …');
+                try {
+                    const res = await fetch(`/api/strong/number/${encodeURIComponent(num)}`);
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    const data = await res.json();
+                    this.displaySingleResult(data);
+                } catch (e) {
+                    this.showError(`Die Strong-Nummer „${esc(num)}" wurde nicht gefunden. Bitte prüfen Sie das Format: Hebräische Wörter beginnen mit „H" (z.B. H430), griechische mit „G" (z.B. G25). Zahlen ohne Präfix werden als hebräisch interpretiert.`);
+                }
+            }
+
+            async lookupByWord() {
+                const word = document.getElementById('strongWord').value.trim();
+                const lang = document.getElementById('language').value;
+                if (!word) return;
+                this.showLoading('Suche läuft …');
+                try {
+                    const params = new URLSearchParams({ word });
+                    if (lang) params.set('language', lang);
+                    const res = await fetch(`/api/strong/word?${params}`);
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    const data = await res.json();
+                    this.displayWordResults(data);
+                } catch (e) {
+                    this.showError(`Die Suche nach „${esc(word)}" ist fehlgeschlagen. Bitte geben Sie ein deutsches Wort aus Luther 1912 ein (z.B. „Liebe", „Gott", „Gnade"). Tipp: Suchen Sie nach dem Wortstamm statt der vollen Wortform. (${e.message})`);
+                }
+            }
+
+            displaySingleResult(data) {
+                const section = document.getElementById('resultsSection');
+                const langLabel = data.language === 'hebrew' ? 'Hebräisch' : 'Griechisch';
+                const usages = data.usages || [];
+
+                let rows = '';
+                usages.forEach(u => {
+                    const refs = u.refs || [];
+                    const refsBtn = refs.length > 0
+                        ? `<button class="refs-open-btn" onclick='openRefPopup(
+                              "${esc(data.strong_number)} – ${esc(u.german_word)}",
+                              "${esc(u.german_word)} kommt ${u.count}× in Luther 1912 vor (${esc(data.title)}).",
+                              ${JSON.stringify(refs)}
+                           )'>Stellen anzeigen (${refs.length})</button>`
+                        : `<span class="count-pill">${u.count}</span>`;
+                    rows += `<tr>
+                        <td><strong>${esc(u.german_word)}</strong></td>
+                        <td><span class="count-pill">${u.count}</span></td>
+                        <td>${refsBtn}</td>
+                    </tr>`;
+                });
+
+                section.innerHTML = `
+                    <div class="strong-result-card">
+                        <h2>${esc(data.strong_number)}</h2>
+                        <div class="strong-meta">
+                            <span class="strong-badge">${langLabel}</span>
+                            <strong>${esc(data.title)}</strong>
+                            &nbsp;·&nbsp; ${data.total_count} Vorkommen in Luther 1912
+                        </div>
+                        <table class="usage-table">
+                            <thead><tr>
+                                <th>Deutsches Wort</th>
+                                <th>Anzahl</th>
+                                <th>Bibelstellen</th>
+                            </tr></thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>`;
+            }
+
+            displayWordResults(data) {
+                const section = document.getElementById('resultsSection');
+                if (!data.results || data.results.length === 0) {
+                    section.innerHTML = `<div class="info"><h3>Keine Treffer</h3>
+                        <p>Für „${esc(data.query)}" wurde kein Eintrag in Luther 1912 gefunden. Tipps: Prüfen Sie die Schreibweise, suchen Sie nach dem Wortstamm (z.B. „lieb" statt „Liebe") oder wechseln Sie die Sprache zwischen „Hebräisch" und „Griechisch".</p></div>`;
+                    return;
+                }
+
+                let items = '';
+                data.results.forEach(entry => {
+                    const langLabel = entry.language === 'hebrew' ? 'H' : 'G';
+                    const topWords = (entry.usages || []).slice(0, 5)
+                        .map(u => u.german_word).join(', ');
+                    items += `<div class="word-search-result" onclick="strongLookup.loadEntry('${esc(entry.strong_number)}')">
+                        <div class="word-strong-id">${langLabel}${entry.strong_number.slice(1)}</div>
+                        <div>
+                            <div class="word-strong-title">${esc(entry.title)}</div>
+                            <div class="word-strong-translations">${esc(topWords)}</div>
+                        </div>
+                        <div class="count-pill">${entry.total_count}×</div>
+                    </div>`;
+                });
+
+                section.innerHTML = `
+                    <div class="strong-result-card">
+                        <h2>Suche: „${esc(data.query)}"</h2>
+                        <div class="strong-meta">${data.total} Treffer – klicken Sie einen Eintrag für Details</div>
+                        <div>${items}</div>
+                    </div>`;
+            }
+
+            async loadEntry(strongId) {
+                this.showLoading('Lade Eintrag …');
+                document.getElementById('strongNumber').value = strongId;
+                this.switchTab('number');
+                try {
+                    const res = await fetch(`/api/strong/number/${encodeURIComponent(strongId)}`);
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    const data = await res.json();
+                    this.displaySingleResult(data);
+                } catch (e) {
+                    this.showError(`Der Eintrag „${esc(strongId)}" konnte nicht geladen werden. Bitte prüfen Sie, ob die Strong-Nummer korrekt ist (z.B. H430 für Hebräisch, G25 für Griechisch). (${e.message})`);
+                }
+            }
+
+            showLoading(msg) {
+                document.getElementById('resultsSection').innerHTML =
+                    `<div class="loading">${msg}</div>`;
+            }
+
+            showError(msg) {
+                document.getElementById('resultsSection').innerHTML =
+                    `<div class="error"><strong>Fehler:</strong> ${msg}</div>`;
+            }
+        }
+
+        function esc(s) {
+            return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+        }
+
+        const strongLookup = new StrongLookup();
+</script>
+{% endblock %}
