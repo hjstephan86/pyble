@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Die Bibel{% endblock %}</title>
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="/static/base.css">
+    {% block head_extra %}{% endblock %}
+</head>
+<body>
+    <nav class="nav-header">
+        <div class="nav-container">
+            <a href="home.html" class="nav-logo">Die Bibel</a>
+            <ul class="nav-menu" id="nav-menu">
+                <li class="nav-item"><a href="home.html"     {% if active_page == 'home'     %}class="active"{% endif %}>Home</a></li>
+                <li class="nav-item"><a href="read.html"     {% if active_page == 'read'     %}class="active"{% endif %}>Lesen</a></li>
+                <li class="nav-item"><a href="search.html"   {% if active_page == 'search'   %}class="active"{% endif %}>Suchen</a></li>
+                <li class="nav-item"><a href="count.html"    {% if active_page == 'count'    %}class="active"{% endif %}>Zählen</a></li>
+                <li class="nav-item"><a href="strong.html"   {% if active_page == 'strong'   %}class="active"{% endif %}>Strong</a></li>
+                <li class="nav-item"><a href="parallel.html" {% if active_page == 'parallel' %}class="active"{% endif %}>Parallel</a></li>
+                <li class="nav-item"><a href="about.html"    {% if active_page == 'about'    %}class="active"{% endif %}>Über</a></li>
+            </ul>
+            <div class="burger-menu" id="burger-menu">
+                <div class="burger-line"></div>
+                <div class="burger-line"></div>
+                <div class="burger-line"></div>
+            </div>
+        </div>
+    </nav>
+
+    {% block content %}{% endblock %}
+
+    {# Burger-Menü-Logik einmal zentral – alle Seiten erben sie automatisch #}
+    <script>
+        (function () {
+            const burger = document.getElementById('burger-menu');
+            const menu   = document.getElementById('nav-menu');
+            burger.addEventListener('click', () => {
+                burger.classList.toggle('active');
+                menu.classList.toggle('active');
+            });
+            document.querySelectorAll('.nav-item a').forEach(link => {
+                link.addEventListener('click', () => {
+                    burger.classList.remove('active');
+                    menu.classList.remove('active');
+                });
+            });
+        })();
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
