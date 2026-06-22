@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+{% set active_page = "search" %}
+
+{% block title %}Die Bibel - Suchen{% endblock %}
+
+{% block head_extra %}
+<style>
+    .header { background: var(--ubuntu-aubergine); color: var(--ubuntu-white); padding: 2rem 0; }
+    .header-content { max-width: 1200px; margin: 0 auto; padding: 0 20px; text-align: center; }
+    .header h1 { font-size: 2.5rem; font-weight: 300; margin-bottom: 0.5rem; color: var(--ubuntu-white); }
+    .header .subtitle { font-size: 1.1rem; opacity: 0.9; font-weight: 300; }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 2rem 20px; }
+
+    .search-section { background: var(--ubuntu-white); padding: 2rem; border-radius: 4px; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .search-form { display: flex; flex-direction: column; gap: 1rem; }
+    .search-row { display: flex; flex-wrap: wrap; gap: 1rem; align-items: end; }
+    .search-group { flex: 1; min-width: 200px; }
+    .search-group.full-width { flex: 100%; }
+
+    label { display: block; font-weight: 400; color: var(--ubuntu-dark-grey); margin-bottom: 0.5rem; font-size: 0.9rem; }
+
+    input, select, button {
+        width: 100%; padding: 0.75rem; border: 1px solid #d1d1d1;
+        border-radius: 2px; font-size: 1rem; font-family: inherit; transition: all 0.2s ease;
+    }
+    input[type="text"] { background: var(--ubuntu-white); color: var(--ubuntu-text); }
+    input[type="text"]:focus, select:focus { outline: none; border-color: var(--ubuntu-orange); box-shadow: 0 0 0 2px rgba(221,72,20,0.2); }
+    select { background: var(--ubuntu-white); color: var(--ubuntu-text); }
+    button { background: var(--ubuntu-orange); color: var(--ubuntu-white); border: none; cursor: pointer; font-weight: 400; }
+    button:hover:not(:disabled) { background: #c73e0f; }
+    button:disabled { background: var(--ubuntu-warm-grey); cursor: not-allowed; }
+
+    .search-tips { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e5e5e5; }
+    .search-tips h4 { color: var(--ubuntu-aubergine); font-weight: 400; font-size: 1rem; margin-bottom: 0.5rem; }
+    .search-tips ul { list-style: none; font-size: 0.9rem; color: var(--ubuntu-dark-grey); }
+
+    .results-section { background: var(--ubuntu-white); padding: 2rem; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); min-height: 400px; }
+    .loading { text-align: center; color: var(--ubuntu-warm-grey); font-style: italic; padding: 3rem; font-size: 1.1rem; }
+
+    .results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 2px solid #e5e5e5; }
+    .results-title { font-size: 1.8rem; color: var(--ubuntu-aubergine); font-weight: 300; }
+    .results-count { color: var(--ubuntu-warm-grey); font-size: 0.9rem; }
+
+    .search-result { margin-bottom: 1.5rem; padding: 1.5rem; background: #fafafa; border-left: 3px solid var(--ubuntu-orange); border-radius: 0 4px 4px 0; transition: all 0.2s ease; }
+    .search-result:hover { background: #f5f5f5; border-left-color: var(--ubuntu-aubergine); }
+    .result-reference { font-weight: 600; color: var(--ubuntu-orange); margin-bottom: 0.5rem; font-size: 1rem; }
+    .result-text { color: var(--ubuntu-text); font-size: 1rem; line-height: 1.7; }
+    .result-text b, .result-highlight { background: rgba(221,72,20,0.2); padding: 2px 4px; border-radius: 2px; font-weight: 500; }
+    .result-translation { color: var(--ubuntu-warm-grey); font-size: 0.8rem; margin-top: 0.5rem; font-style: italic; }
+
+    .pagination { display: flex; justify-content: center; gap: 1rem; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #e5e5e5; }
+    .pagination button { padding: 0.5rem 1rem; font-size: 0.9rem; width: auto; min-width: 80px; background: var(--ubuntu-aubergine); }
+    .pagination button:hover { background: #5a1f21; }
+    .pagination button:disabled { background: var(--ubuntu-warm-grey); }
+
+    .error { background: #fdf2f2; color: #c53030; padding: 1.5rem; border-radius: 2px; border-left: 3px solid #c53030; margin: 1rem 0; }
+    .info { background: #f0f9ff; color: var(--ubuntu-dark-grey); padding: 2rem; border-radius: 2px; border-left: 3px solid var(--ubuntu-orange); text-align: center; }
+    .info h3 { color: var(--ubuntu-aubergine); font-weight: 300; font-size: 1.5rem; margin-bottom: 1rem; }
+
+    @media (max-width: 768px) {
+        .header h1 { font-size: 2rem; }
+        .container { padding: 1rem 10px; }
+        .search-row { flex-direction: column; align-items: flex-start; }
+        .search-group { min-width: auto; width: 100%; }
+        .results-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+        .pagination { flex-direction: column; align-items: center; }
+        .pagination button { width: 200px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <div class="header">
+        <div class="header-content">
+            <h1>Bibel durchsuchen</h1>
+            <p class="subtitle">Finden Sie Verse und Textstellen in der Heiligen Schrift</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="search-section">
+            <form class="search-form" id="searchForm">
+                <div class="search-row">
+                    <div class="search-group full-width">
+                        <label for="searchQuery">Suchbegriff:</label>
+                        <input type="text" id="searchQuery" placeholder="Geben Sie Ihren Suchbegriff ein..." required>
+                    </div>
+                </div>
+                <div class="search-row">
+                    <div class="search-group">
+                        <label for="translation">Übersetzung:</label>
+                        <select id="translation">
+                            <option value="">Alle Übersetzungen</option>
+                        </select>
+                    </div>
+                    <div class="search-group">
+                        <label for="book">Buch (optional):</label>
+                        <select id="book">
+                            <option value="">Alle Bücher</option>
+                        </select>
+                    </div>
+                    <div class="search-group">
+                        <button type="submit" id="searchButton">Suchen</button>
+                    </div>
+                </div>
+            </form>
+
+            <div class="search-tips">
+                <h4>Suchtipps:</h4>
+                <ul>
+                    <li><strong>"Text"</strong> – Exakte Suche nach dem Begriff in Anführungszeichen (ganzes Wort)</li>
+                    <li><strong>`Text`</strong> – Suche mit Berücksichtigung der Groß-/Kleinschreibung</li>
+                    <li><strong>`"Text"`</strong> – Kombination aus exakter und Groß-/Kleinschreibung-sensitiver Suche</li>
+                    <li><strong>f Wort1 Wort2 ...</strong> – Findet Verse, die alle angegebenen Wörter enthalten</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="results-section">
+            <div class="info">
+                <h3>Volltextsuche</h3>
+                <p>Geben Sie einen Suchbegriff ein, um Verse in der Bibel zu finden.</p>
+                <p style="margin-top: 1rem; font-size: 0.9rem;"><strong>Tipps:</strong> Siehe die Hinweise unterhalb des Suchformulars für erweiterte Suchoptionen.</p>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function escHtml(s) {
+        return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    class BibleSearch {
+        constructor() {
+            this.currentResults = [];
+            this.currentPage = 1;
+            this.resultsPerPage = 20;
+            this.totalResults = 0;
+            this.currentQuery = '';
+            this.initializeEventListeners();
+            this.loadTranslations();
+            this.loadBooks();
+        }
+
+        initializeEventListeners() {
+            document.getElementById('searchForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.performSearch();
+            });
+            document.getElementById('translation').addEventListener('change', (e) => {
+                this.loadBooks(e.target.value);
+            });
+            document.getElementById('searchQuery').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); this.performSearch(); }
+            });
+        }
+
+        async loadTranslations() {
+            try {
+                const response = await fetch('/api/translations');
+                if (!response.ok) throw new Error(`HTTP-Fehler! Status: ${response.status}`);
+                const data = await response.json();
+                const translationSelect = document.getElementById('translation');
+                translationSelect.innerHTML = '<option value="">Alle Übersetzungen</option>';
+                (data.translations || data).forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t; opt.textContent = t;
+                    translationSelect.appendChild(opt);
+                });
+            } catch (error) { this.showError(`Die Übersetzungsliste konnte nicht geladen werden. Bitte laden Sie die Seite neu. (${error.message})`); }
+        }
+
+        async loadBooks(selectedTranslation = '') {
+            try {
+                let booksUrl;
+                if (selectedTranslation) {
+                    booksUrl = `/api/${selectedTranslation}/books`;
+                } else {
+                    const r = await fetch('/api/translations');
+                    if (!r.ok) throw new Error(`HTTP-Fehler! Status: ${r.status}`);
+                    const d = await r.json();
+                    const translations = d.translations || d;
+                    if (translations.length === 0) return;
+                    booksUrl = `/api/${translations[0]}/books`;
+                }
+                const response = await fetch(booksUrl);
+                if (!response.ok) throw new Error(`HTTP-Fehler! Status: ${response.status}`);
+                const data = await response.json();
+                this.populateBooks(data.books);
+            } catch (error) { this.showError(`Die Bücherliste konnte nicht geladen werden. Bitte laden Sie die Seite neu. (${error.message})`); }
+        }
+
+        populateBooks(books) {
+            const bookSelect = document.getElementById('book');
+            bookSelect.innerHTML = '<option value="">Alle Bücher</option>';
+            books.forEach(book => {
+                const opt = document.createElement('option');
+                opt.value = book.name; opt.textContent = book.name;
+                bookSelect.appendChild(opt);
+            });
+        }
+
+        async performSearch(page = 1) {
+            const query = document.getElementById('searchQuery').value.trim();
+            if (!query) { this.showError('Bitte geben Sie einen Suchbegriff ein, z.B. „Liebe", „Glaube" oder „Licht". Groß-/Kleinschreibung wird nicht beachtet.'); return; }
+
+            const book        = document.getElementById('book').value;
+            const translation = document.getElementById('translation').value;
+            this.currentQuery = query;
+            this.currentPage  = page;
+            this.showLoading('Suche läuft...');
+
+            try {
+                const searchParams = new URLSearchParams({
+                    q: query,
+                    ...(book        && { book }),
+                    ...(translation && { translation }),
+                    page:  page,
+                    limit: this.resultsPerPage
+                });
+                const response = await fetch(`/api/search?${searchParams}`);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || `HTTP-Fehler! Status: ${response.status}`);
+                }
+                this.displayResults(await response.json(), query);
+            } catch (error) { this.showError(`Die Suche nach „${escHtml(query)}" ist fehlgeschlagen. Bitte prüfen Sie Ihre Eingabe und versuchen Sie es erneut. Tipp: Suchen Sie nach einzelnen Wörtern statt langen Phrasen. (${error.message})`); }
+        }
+
+        displayResults(data, query) {
+            const resultsSection = document.querySelector('.results-section');
+            if (!data.results || data.results.length === 0) {
+                resultsSection.innerHTML = `<div class="info"><h3>Keine Ergebnisse gefunden</h3><p>Für „${escHtml(query)}" wurden keine Verse gefunden. Tipps: Prüfen Sie die Schreibweise, suchen Sie nach einer kürzeren Wortform (z.B. „lieb" statt „Liebe") oder wählen Sie eine andere Übersetzung bzw. ein anderes Buch.</p></div>`;
+                return;
+            }
+            this.totalResults = data.total || data.results.length;
+            let html = `<div class="results-header"><h2 class="results-title">Suchergebnisse</h2><div class="results-count">${this.totalResults} Ergebnisse für „${escHtml(query)}"</div></div>`;
+            data.results.forEach(result => {
+                html += `<div class="search-result">
+                    <div class="result-reference">${escHtml(result.book)} ${result.chapter}:${result.verse}</div>
+                    <div class="result-text">${result.text}</div>
+                    <div class="result-translation">${escHtml(result.translation)}</div>
+                </div>`;
+            });
+            if (this.totalResults > this.resultsPerPage) html += this.createPagination();
+            resultsSection.innerHTML = html;
+        }
+
+        createPagination() {
+            const totalPages = Math.ceil(this.totalResults / this.resultsPerPage);
+            let html = '<div class="pagination">';
+            if (this.currentPage > 1)
+                html += `<button onclick="bibleSearch.goToPage(${this.currentPage - 1})">← Vorherige</button>`;
+            const start = Math.max(1, this.currentPage - 2);
+            const end   = Math.min(totalPages, this.currentPage + 2);
+            for (let i = start; i <= end; i++) {
+                const style = i === this.currentPage ? 'style="background:var(--ubuntu-orange);"' : '';
+                html += `<button onclick="bibleSearch.goToPage(${i})" ${style}>${i}</button>`;
+            }
+            if (this.currentPage < totalPages)
+                html += `<button onclick="bibleSearch.goToPage(${this.currentPage + 1})">Nächste →</button>`;
+            html += '</div>';
+            return html;
+        }
+
+        goToPage(page) {
+            this.performSearch(page);
+            document.querySelector('.results-section').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        showLoading(message) { document.querySelector('.results-section').innerHTML = `<div class="loading">${escHtml(message)}</div>`; }
+        showError(message)   { document.querySelector('.results-section').innerHTML = `<div class="error"><strong>Fehler:</strong> ${escHtml(message)}</div>`; }
+    }
+
+    const bibleSearch = new BibleSearch();
+</script>
+{% endblock %}
