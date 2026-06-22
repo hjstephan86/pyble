@@ -1,0 +1,27 @@
+digraph "packages_pyble" {
+rankdir=BT
+charset="utf-8"
+"src" [color="black", label=<src>, shape="box", style="solid"];
+"src.bible_base" [color="black", label=<src.bible_base>, shape="box", style="solid"];
+"src.bible_manager" [color="black", label=<src.bible_manager>, shape="box", style="solid"];
+"src.elberfelder1905" [color="black", label=<src.elberfelder1905>, shape="box", style="solid"];
+"src.luther1912" [color="black", label=<src.luther1912>, shape="box", style="solid"];
+"src.main" [color="black", label=<src.main>, shape="box", style="solid"];
+"src.models" [color="black", label=<src.models>, shape="box", style="solid"];
+"src.schlachter1951" [color="black", label=<src.schlachter1951>, shape="box", style="solid"];
+"src.setup-konkordanz" [color="black", label=<src.setup-konkordanz>, shape="box", style="solid"];
+"src.strong_manager" [color="black", label=<src.strong_manager>, shape="box", style="solid"];
+"src.web" [color="black", label=<src.web>, shape="box", style="solid"];
+"src.bible_manager" -> "src.bible_base" [arrowhead="open", arrowtail="none"];
+"src.bible_manager" -> "src.elberfelder1905" [arrowhead="open", arrowtail="none"];
+"src.bible_manager" -> "src.luther1912" [arrowhead="open", arrowtail="none"];
+"src.bible_manager" -> "src.schlachter1951" [arrowhead="open", arrowtail="none"];
+"src.bible_manager" -> "src.web" [arrowhead="open", arrowtail="none"];
+"src.elberfelder1905" -> "src.bible_base" [arrowhead="open", arrowtail="none"];
+"src.luther1912" -> "src.bible_base" [arrowhead="open", arrowtail="none"];
+"src.main" -> "src.bible_manager" [arrowhead="open", arrowtail="none"];
+"src.main" -> "src.models" [arrowhead="open", arrowtail="none"];
+"src.main" -> "src.strong_manager" [arrowhead="open", arrowtail="none"];
+"src.schlachter1951" -> "src.bible_base" [arrowhead="open", arrowtail="none"];
+"src.web" -> "src.bible_base" [arrowhead="open", arrowtail="none"];
+}
