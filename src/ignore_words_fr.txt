@@ -1,0 +1,155 @@
+# Mots ignorés (mots vides) pour la traduction biblique française
+# (Segond 1910)
+#
+# Un mot par ligne, en minuscules. Les lignes commençant par '#' ou
+# vides sont ignorées. Cette liste est chargée au démarrage (voir main.py)
+# et contrôle quels mots arrivent dans "ignored_words" vs "counted_words"
+# dans /api/count.
+
+# Articles
+le
+la
+les
+un
+une
+des
+du
+de
+d
+
+# Pronoms personnels
+je
+tu
+il
+elle
+on
+nous
+vous
+ils
+elles
+moi
+toi
+lui
+me
+te
+se
+nous
+vous
+y
+en
+
+# Pronoms possessifs
+mon
+ma
+mes
+ton
+ta
+tes
+son
+sa
+ses
+notre
+nos
+votre
+vos
+leur
+leurs
+
+# Pronoms démonstratifs
+ce
+cet
+cette
+ces
+celui
+celle
+ceux
+celles
+cela
+ça
+
+# Conjonctions
+et
+ou
+mais
+donc
+car
+ni
+soit
+ainsi
+cependant
+toutefois
+néanmoins
+alors
+aussi
+encore
+puis
+enfin
+d
+
+# Prépositions
+à
+de
+en
+par
+pour
+avec
+sans
+sous
+sur
+dans
+entre
+vers
+chez
+contre
+pendant
+avant
+après
+parmi
+selon
+
+# Verbes auxiliaires
+être
+avoir
+aller
+avoir
+faire
+pouvoir
+vouloir
+devoir
+suis
+es
+est
+sommes
+êtes
+sont
+ai
+as
+a
+avons
+avez
+ont
+
+# Particules et autres mots vides
+pas
+ne
+ni
+oui
+non
+oui
+non
+peut
+doit
+faut
+c
+t
+s
+l
+j
+
+# Articles contractés et variantes
+au
+aux
+ce
+cet
+cette
+ces

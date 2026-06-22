@@ -18,7 +18,7 @@ if _src_dir not in sys.path:
 os.makedirs(os.path.join(_src_dir, 'static'), exist_ok=True)
 os.chdir(_src_dir)
 
-from main import app, get_bible_manager, get_strong_manager, get_ignore_words_de, get_ignore_words_en
+from main import app, get_bible_manager, get_strong_manager, get_ignore_words_de, get_ignore_words_en, get_ignore_words_fr
 
 
 # ---------------------------------------------------------------------------
@@ -895,6 +895,35 @@ class TestMainAPICoverage(unittest.TestCase):
         data = r.json()
         ignored = {w["word"] for w in data["ignored_words"]}
         self.assertIn("the", ignored)
+
+    def test_count_ignore_words_fr_via_dependency(self):
+        """Französische Stoppwörter gelten für FRENCH_TRANSLATIONS."""
+        from bible_base import Bible
+        from main import _bible_manager, FRENCH_TRANSLATIONS
+
+        class MiniFrBible(Bible):
+            def load_text(self, fp):
+                self._parse_text(
+                    "0#Genèse#1#1#Au commencement Dieu créa les cieux et la terre.\n"
+                    "0#Genèse#1#2#La terre était informe et vide.\n"
+                )
+
+        b_fr = MiniFrBible("Segond 1910")
+        b_fr.load_text("")
+        b_fr.book_positions = {n: i for i, n in enumerate(b_fr.books.keys())}
+        _bible_manager.bibles["SEGOND 1910"] = b_fr
+
+        app.dependency_overrides[get_ignore_words_fr] = lambda: {"et", "la", "au", "les"}
+        r = self.client.get(
+            "/api/count?translation=Segond 1910"
+            "&book_from=Genèse&chapter_from=1&verse_from=1"
+            "&book_to=Genèse&chapter_to=1&verse_to=2"
+        )
+        self.assertEqual(r.status_code, 200)
+        data = r.json()
+        ignored = {w["word"] for w in data["ignored_words"]}
+        self.assertIn("et", ignored)
+        self.assertIn("la", ignored)
 
 
 # ---------------------------------------------------------------------------

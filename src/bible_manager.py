@@ -5,6 +5,7 @@ from luther1912 import Luther1912
 from web import WorldEnglishBible
 from schlachter1951 import Schlachter1951
 from elberfelder1905 import Elberfelder1905
+from segond1910 import Segond1910
 
 class BibleManager:
     """Manages multiple Bible translations"""
@@ -29,6 +30,8 @@ class BibleManager:
             'schlachter': Schlachter1951,
             'elberfelder1905': Elberfelder1905,
             'elberfelder': Elberfelder1905,
+            'segond1910': Segond1910,
+            'segond': Segond1910,
         }
         
         for file_path in texts_path.glob("*.txt"):

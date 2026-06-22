@@ -21,9 +21,13 @@ _bible_manager = BibleManager()
 _strong_manager = StrongManager()
 _ignore_words_de: set = set()
 _ignore_words_en: set = set()
+_ignore_words_fr: set = set()
 
 # Übersetzungen, die Englisch verwenden
 ENGLISH_TRANSLATIONS = {"WEB", "KJV", "KJV1611", "NKJV", "NIV", "ESV"}
+
+# Übersetzungen, die Französisch verwenden
+FRENCH_TRANSLATIONS = {"SEGOND 1910"}
 
 
 def load_ignore_words(file_path: str = "ignore_words_de.txt") -> set:
@@ -44,15 +48,17 @@ def load_ignore_words(file_path: str = "ignore_words_de.txt") -> set:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup- und Shutdown-Logik via lifespan context manager."""
-    global _ignore_words_de, _ignore_words_en
+    global _ignore_words_de, _ignore_words_en, _ignore_words_fr
     _bible_manager.load_bibles()
     _strong_manager.load()
     _ignore_words_de = load_ignore_words("ignore_words_de.txt")
     _ignore_words_en = load_ignore_words("ignore_words_en.txt")
+    _ignore_words_fr = load_ignore_words("ignore_words_fr.txt")
     logger.info(
-        "Loaded %d ignore words (DE), %d (EN)",
+        "Loaded %d ignore words (DE), %d (EN), %d (FR)",
         len(_ignore_words_de),
         len(_ignore_words_en),
+        len(_ignore_words_fr),
     )
     yield
     # Hier könnten Shutdown-Aufräumarbeiten stehen
@@ -93,6 +99,11 @@ def get_ignore_words_de() -> set:
 def get_ignore_words_en() -> set:
     """Dependency: liefert die englische Stoppwortliste."""
     return _ignore_words_en
+
+
+def get_ignore_words_fr() -> set:
+    """Dependency: liefert die französische Stoppwortliste."""
+    return _ignore_words_fr
 
 
 # ---------------------------------------------------------------------------
@@ -398,6 +409,7 @@ async def count_words(
     bm: BibleManager = Depends(get_bible_manager),
     ignore_de: set = Depends(get_ignore_words_de),
     ignore_en: set = Depends(get_ignore_words_en),
+    ignore_fr: set = Depends(get_ignore_words_fr),
 ):
     """Count word frequencies in a range from (book_from, chapter_from, verse_from)
     to (book_to, chapter_to, verse_to), inclusive. Used by count.html."""
@@ -440,11 +452,12 @@ async def count_words(
                     counts[word.lower()] += 1
 
     # Ignore-Liste passend zur Übersetzungssprache wählen
-    ignore_list = (
-        ignore_en
-        if translation.upper() in ENGLISH_TRANSLATIONS
-        else ignore_de
-    )
+    if translation.upper() in ENGLISH_TRANSLATIONS:
+        ignore_list = ignore_en
+    elif translation.upper() in FRENCH_TRANSLATIONS:
+        ignore_list = ignore_fr
+    else:
+        ignore_list = ignore_de
 
     counted_words = []
     ignored_words = []
