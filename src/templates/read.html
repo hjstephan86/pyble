@@ -1,0 +1,384 @@
+{% extends "base.html" %}
+{% set active_page = "read" %}
+
+{% block title %}Die Bibel - Zum Lesen{% endblock %}
+
+{% block head_extra %}
+<style>
+    .header { background: var(--ubuntu-aubergine); color: var(--ubuntu-white); padding: 2rem 0; }
+    .header-content { max-width: 1200px; margin: 0 auto; padding: 0 20px; text-align: center; }
+    .header h1 { font-size: 2.5rem; font-weight: 300; margin-bottom: 0.5rem; color: var(--ubuntu-white); }
+    .header .subtitle { font-size: 1.1rem; opacity: 0.9; font-weight: 300; }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 2rem 20px; }
+
+    .controls-section {
+        background: var(--ubuntu-white); padding: 2rem; border-radius: 4px;
+        margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .control-row { display: flex; flex-wrap: wrap; gap: 1rem; align-items: end; margin-bottom: 1.5rem; }
+    .control-row:last-child { margin-bottom: 0; }
+    .control-group { flex: 1; min-width: 200px; }
+
+    label { display: block; font-weight: 400; color: var(--ubuntu-dark-grey); margin-bottom: 0.5rem; font-size: 0.9rem; }
+
+    select, button {
+        width: 100%; padding: 0.75rem; border: 1px solid #d1d1d1;
+        border-radius: 2px; font-size: 1rem; font-family: inherit; transition: all 0.2s ease;
+    }
+    select { background: var(--ubuntu-white); color: var(--ubuntu-text); }
+    select:focus { outline: none; border-color: var(--ubuntu-orange); box-shadow: 0 0 0 2px rgba(221,72,20,0.2); }
+    select:disabled { background: #f5f5f5; color: #999; cursor: not-allowed; }
+    button { background: var(--ubuntu-orange); color: var(--ubuntu-white); border: none; cursor: pointer; font-weight: 400; }
+    button:hover:not(:disabled) { background: #c73e0f; }
+    button:disabled { background: var(--ubuntu-warm-grey); cursor: not-allowed; }
+
+    .content-section {
+        background: var(--ubuntu-white); padding: 2rem; border-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1); min-height: 400px;
+    }
+    .loading { text-align: center; color: var(--ubuntu-warm-grey); font-style: italic; padding: 3rem; font-size: 1.1rem; }
+
+    .chapter-title {
+        font-size: 1.8rem; color: var(--ubuntu-aubergine); margin-bottom: 2rem;
+        text-align: center; font-weight: 300; border-bottom: 2px solid #e5e5e5; padding-bottom: 1rem;
+    }
+    .chapter-subtitle { color: var(--ubuntu-warm-grey); font-size: 0.9rem; font-weight: 300; margin-top: 0.5rem; }
+
+    .verse {
+        margin-bottom: 1rem; padding: 1rem; background: #fafafa;
+        border-left: 3px solid var(--ubuntu-orange); border-radius: 0 2px 2px 0; transition: all 0.2s ease;
+    }
+    .verse:hover { background: #f5f5f5; border-left-color: var(--ubuntu-aubergine); }
+
+    @keyframes verseHighlightFade {
+        0%   { background: rgba(221,72,20,0.25); border-left-color: var(--ubuntu-orange); }
+        70%  { background: rgba(221,72,20,0.15); }
+        100% { background: #fafafa; border-left-color: var(--ubuntu-orange); }
+    }
+    .verse-highlight {
+        animation: verseHighlightFade 3s ease forwards;
+    }
+    .verse-number { font-weight: 600; color: var(--ubuntu-orange); margin-right: 0.75rem; font-size: 0.9rem; display: inline-block; min-width: 2rem; }
+    .verse-text { color: var(--ubuntu-text); font-size: 1rem; line-height: 1.7; }
+
+    .error { background: #fdf2f2; color: #c53030; padding: 1.5rem; border-radius: 2px; border-left: 3px solid #c53030; margin: 1rem 0; }
+    .info { background: #f0f9ff; color: var(--ubuntu-dark-grey); padding: 2rem; border-radius: 2px; border-left: 3px solid var(--ubuntu-orange); text-align: center; }
+    .info h3 { color: var(--ubuntu-aubergine); font-weight: 300; font-size: 1.5rem; margin-bottom: 1rem; }
+
+    .chapter-navigation { display: flex; justify-content: center; gap: 1rem; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #e5e5e5; }
+    .chapter-nav-btn { padding: 0.5rem 1rem; font-size: 0.9rem; width: auto; min-width: 120px; background: var(--ubuntu-aubergine); }
+    .chapter-nav-btn:hover { background: #5a1f21; }
+
+    @media (max-width: 768px) {
+        .header h1 { font-size: 2rem; }
+        .container { padding: 1rem 10px; }
+        .control-row { flex-direction: column; align-items: flex-start; }
+        .control-group { min-width: auto; width: 100%; }
+        select, button { width: 100%; }
+        label { text-align: left; }
+        .chapter-navigation { flex-direction: column; align-items: center; }
+        .chapter-nav-btn { width: 200px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <div class="header">
+        <div class="header-content">
+            <h1>Die Bibel</h1>
+            <p class="subtitle">Lesen in verschiedenen Übersetzungen</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="controls-section">
+            <div class="control-row">
+                <div class="control-group">
+                    <label for="translation">Übersetzung:</label>
+                    <select id="translation">
+                        <option value="">Übersetzung auswählen...</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="book">Buch:</label>
+                    <select id="book" disabled>
+                        <option value="">Buch auswählen...</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="chapter">Kapitel:</label>
+                    <select id="chapter" disabled>
+                        <option value="">Kapitel auswählen...</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <button id="loadChapter" disabled>Kapitel laden</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-section">
+            <div class="info">
+                <h3>Bibel lesen</h3>
+                <p>Wählen Sie eine Übersetzung, ein Buch und ein Kapitel aus, um mit dem Lesen zu beginnen.</p>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    class BibleReader {
+        constructor() {
+            this.currentTranslation = '';
+            this.currentBook = '';
+            this.currentChapter = 0;
+            this.highlightVerse = null;
+            this.initializeEventListeners();
+            this.loadTranslations();
+        }
+
+        initializeEventListeners() {
+            document.getElementById('translation').addEventListener('change', (e) => {
+                this.handleTranslationChange(e.target.value);
+            });
+            document.getElementById('book').addEventListener('change', (e) => {
+                this.handleBookChange(e.target.value);
+            });
+            document.getElementById('chapter').addEventListener('change', (e) => {
+                this.handleChapterChange(parseInt(e.target.value));
+            });
+            document.getElementById('loadChapter').addEventListener('click', () => {
+                this.loadChapter();
+            });
+        }
+
+        async loadTranslations() {
+            try {
+                this.showLoading('Übersetzungen werden geladen...');
+                const response = await fetch('/api/translations');
+                if (!response.ok) throw new Error(`HTTP-Fehler! Status: ${response.status}`);
+                const data = await response.json();
+                this.populateTranslations(data.translations || data);
+            } catch (error) {
+                this.showError(`Die verfügbaren Übersetzungen konnten nicht geladen werden. Bitte prüfen Sie, ob der Server läuft, und laden Sie die Seite neu. (${error.message})`);
+            }
+        }
+
+        populateTranslations(translations) {
+            const translationSelect = document.getElementById('translation');
+            translationSelect.innerHTML = '<option value="">Übersetzung auswählen...</option>';
+            translations.forEach(translation => {
+                const option = document.createElement('option');
+                option.value = translation;
+                option.textContent = translation;
+                translationSelect.appendChild(option);
+            });
+
+            // Deep-Link aus URL-Parametern (von strong.html)
+            const params = new URLSearchParams(window.location.search);
+            const pTranslation = params.get('translation');
+            const pBook        = params.get('book');
+            const pChapter     = parseInt(params.get('chapter') || '0');
+            const pVerse       = parseInt(params.get('verse')   || '0');
+            const pHighlight   = params.get('highlight');
+
+            if (pTranslation && pBook && pChapter) {
+                // Passende Übersetzung vorwählen (beste Übereinstimmung)
+                const match = translations.find(t => t === pTranslation) || translations[0];
+                if (match) {
+                    translationSelect.value = match;
+                    if (pHighlight) this.highlightVerse = pVerse || null;
+                    this.handleTranslationChange(match).then(() => {
+                        // Buch setzen
+                        const bookSelect = document.getElementById('book');
+                        const bookOpt = Array.from(bookSelect.options).find(o => o.value === pBook);
+                        if (bookOpt) {
+                            bookSelect.value = pBook;
+                            this.handleBookChange(pBook);
+                            // Kapitel setzen sobald Kapitel geladen
+                            const waitForChapter = setInterval(() => {
+                                const chapSelect = document.getElementById('chapter');
+                                const chapOpt = Array.from(chapSelect.options).find(o => parseInt(o.value) === pChapter);
+                                if (chapOpt) {
+                                    clearInterval(waitForChapter);
+                                    chapSelect.value = pChapter;
+                                    this.currentChapter = pChapter;
+                                    this.loadChapter();
+                                }
+                            }, 100);
+                        }
+                    });
+                    return;
+                }
+            }
+
+            this.clearContent();
+        }
+
+        async handleTranslationChange(translation) {
+            if (!translation) return;
+            this.currentTranslation = translation;
+            this.resetBookAndChapter();
+            try {
+                this.showLoading('Bücher werden geladen...');
+                const response = await fetch(`/api/${translation}/books`);
+                if (!response.ok) throw new Error(`HTTP-Fehler! Status: ${response.status}`);
+                const data = await response.json();
+                this.populateBooks(data.books);
+            } catch (error) {
+                this.showError(`Die Bücherliste für „${translation}" konnte nicht geladen werden. Bitte wählen Sie eine andere Übersetzung oder laden Sie die Seite neu. (${error.message})`);
+            }
+        }
+
+        handleBookChange(bookName) {
+            if (!bookName) return;
+            this.currentBook = bookName;
+            this.resetChapter();
+            this.loadChaptersForBook(bookName);
+        }
+
+        handleChapterChange(chapterNum) {
+            this.currentChapter = chapterNum;
+            document.getElementById('loadChapter').disabled = !chapterNum;
+            if (chapterNum) this.loadChapter();
+        }
+
+        async loadChaptersForBook(bookName) {
+            try {
+                const response = await fetch(`/api/${this.currentTranslation}/${encodeURIComponent(bookName)}/chapters`);
+                if (!response.ok) throw new Error(`HTTP-Fehler! Status: ${response.status}`);
+                const data = await response.json();
+                this.populateChapters(data.chapters);
+            } catch (error) {
+                this.showError(`Die Kapitelliste für „${bookName}" konnte nicht geladen werden. Bitte wählen Sie ein anderes Buch oder versuchen Sie es erneut. (${error.message})`);
+            }
+        }
+
+        async loadChapter() {
+            if (!this.currentTranslation || !this.currentBook || !this.currentChapter) {
+                this.showError('Bitte wählen Sie zuerst eine Übersetzung (z.B. „Luther 1912"), dann ein Buch (z.B. „Johannes") und anschließend ein Kapitel aus.');
+                return;
+            }
+            try {
+                this.showLoading('Kapitel wird geladen...');
+                const response = await fetch(`/api/${this.currentTranslation}/${encodeURIComponent(this.currentBook)}/${this.currentChapter}`);
+                if (!response.ok) throw new Error(`HTTP-Fehler! Status: ${response.status}`);
+                const data = await response.json();
+                this.displayChapter(data);
+            } catch (error) {
+                this.showError(`Kapitel ${this.currentChapter} aus „${this.currentBook}" (${this.currentTranslation}) konnte nicht geladen werden. Bitte versuchen Sie es erneut oder wählen Sie ein anderes Kapitel. (${error.message})`);
+            }
+        }
+
+        populateBooks(books) {
+            const bookSelect = document.getElementById('book');
+            bookSelect.innerHTML = '<option value="">Buch auswählen...</option>';
+            books.forEach(book => {
+                const option = document.createElement('option');
+                option.value = book.name;
+                option.textContent = `${book.name} (${book.chapters} Kapitel)`;
+                bookSelect.appendChild(option);
+            });
+            bookSelect.disabled = false;
+            this.clearContent();
+        }
+
+        populateChapters(chapters) {
+            const chapterSelect = document.getElementById('chapter');
+            chapterSelect.innerHTML = '<option value="">Kapitel auswählen...</option>';
+            chapters.forEach(chapter => {
+                const option = document.createElement('option');
+                option.value = chapter.chapter;
+                option.textContent = `Kapitel ${chapter.chapter} (${chapter.verses} Verse)`;
+                chapterSelect.appendChild(option);
+            });
+            chapterSelect.disabled = false;
+        }
+
+        displayChapter(chapterData) {
+            const content = document.querySelector('.content-section');
+            let html = `<div class="chapter-title">${escHtml(chapterData.book)} Kapitel ${chapterData.chapter}<div class="chapter-subtitle">${escHtml(chapterData.translation)}</div></div>`;
+            const verseNumbers = Object.keys(chapterData.verses).map(Number).sort((a, b) => a - b);
+            verseNumbers.forEach(verseNum => {
+                html += `<div class="verse" id="verse-${verseNum}"><span class="verse-number">${verseNum}</span><span class="verse-text">${escHtml(chapterData.verses[verseNum])}</span></div>`;
+            });
+            html += this.createChapterNavigation();
+            content.innerHTML = html;
+
+            // Highlight-Vers aus URL-Parameter anspringen
+            if (this.highlightVerse) {
+                const target = document.getElementById(`verse-${this.highlightVerse}`);
+                if (target) {
+                    setTimeout(() => {
+                        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        target.classList.add('verse-highlight');
+                        setTimeout(() => target.classList.remove('verse-highlight'), 3000);
+                    }, 150);
+                }
+                this.highlightVerse = null; // nur einmal
+            }
+        }
+
+        createChapterNavigation() {
+            const options = Array.from(document.getElementById('chapter').options).slice(1);
+            let navHtml = '<div class="chapter-navigation">';
+            const prevChapter = this.currentChapter - 1;
+            if (prevChapter >= 1 && options.some(opt => parseInt(opt.value) === prevChapter))
+                navHtml += `<button class="chapter-nav-btn" onclick="bibleReader.navigateToChapter(${prevChapter})">← Kapitel ${prevChapter}</button>`;
+            const nextChapter = this.currentChapter + 1;
+            if (options.some(opt => parseInt(opt.value) === nextChapter))
+                navHtml += `<button class="chapter-nav-btn" onclick="bibleReader.navigateToChapter(${nextChapter})">Kapitel ${nextChapter} →</button>`;
+            navHtml += '</div>';
+            return navHtml;
+        }
+
+        navigateToChapter(chapterNum) {
+            document.getElementById('chapter').value = chapterNum;
+            this.currentChapter = chapterNum;
+            this.loadChapter().then(() => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
+
+        resetBookAndChapter() {
+            this.currentBook = '';
+            this.currentChapter = 0;
+            const bookSelect    = document.getElementById('book');
+            const chapterSelect = document.getElementById('chapter');
+            const loadButton    = document.getElementById('loadChapter');
+            bookSelect.innerHTML = '<option value="">Buch auswählen...</option>';
+            bookSelect.disabled = true;
+            chapterSelect.innerHTML = '<option value="">Kapitel auswählen...</option>';
+            chapterSelect.disabled = true;
+            loadButton.disabled = true;
+        }
+
+        resetChapter() {
+            this.currentChapter = 0;
+            const chapterSelect = document.getElementById('chapter');
+            const loadButton    = document.getElementById('loadChapter');
+            chapterSelect.innerHTML = '<option value="">Kapitel auswählen...</option>';
+            chapterSelect.disabled = true;
+            loadButton.disabled = true;
+        }
+
+        showLoading(message) {
+            document.querySelector('.content-section').innerHTML = `<div class="loading">${escHtml(message)}</div>`;
+        }
+        showError(message) {
+            document.querySelector('.content-section').innerHTML = `<div class="error"><strong>Fehler:</strong> ${escHtml(message)}</div>`;
+        }
+        clearContent() {
+            document.querySelector('.content-section').innerHTML = `<div class="info"><h3>Bibel lesen</h3><p>Wählen Sie eine Übersetzung, ein Buch und ein Kapitel aus, um mit dem Lesen zu beginnen.</p></div>`;
+        }
+    }
+
+    function escHtml(s) {
+        return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    const bibleReader = new BibleReader();
+</script>
+{% endblock %}
