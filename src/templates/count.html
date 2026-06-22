@@ -1,0 +1,419 @@
+{% extends "base.html" %}
+{% set active_page = "count" %}
+
+{% block title %}Die Bibel - Wörter zählen{% endblock %}
+
+{% block head_extra %}
+<style>
+    .header { background: var(--ubuntu-aubergine); color: var(--ubuntu-white); padding: 2rem 0; }
+    .header-content { max-width: 1200px; margin: 0 auto; padding: 0 20px; text-align: center; }
+    .header h1 { font-size: 2.5rem; font-weight: 300; margin-bottom: 0.5rem; color: var(--ubuntu-white); }
+    .header .subtitle { font-size: 1.1rem; opacity: 0.9; font-weight: 300; }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 2rem 20px; }
+
+    .count-section { background: var(--ubuntu-white); padding: 2rem; border-radius: 4px; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .count-form { display: flex; flex-direction: column; gap: 1rem; }
+    .count-row { display: flex; flex-wrap: wrap; gap: 1rem; align-items: end; }
+    .count-group { flex: 1; min-width: 150px; }
+    .count-actions { display: flex; justify-content: flex-end; }
+    .count-actions button { width: auto; min-width: 150px; padding: 0.75rem 2rem; }
+
+    label { display: block; font-weight: 400; color: var(--ubuntu-dark-grey); margin-bottom: 0.5rem; font-size: 0.9rem; }
+    input, select, button {
+        width: 100%; padding: 0.75rem; border: 1px solid #d1d1d1;
+        border-radius: 2px; font-size: 1rem; font-family: inherit; transition: all 0.2s ease;
+    }
+    input[type="text"] { background: var(--ubuntu-white); color: var(--ubuntu-text); }
+    input[type="text"]:focus, select:focus { outline: none; border-color: var(--ubuntu-orange); box-shadow: 0 0 0 2px rgba(221,72,20,0.2); }
+    select { background: var(--ubuntu-white); color: var(--ubuntu-text); }
+    button { background: var(--ubuntu-orange); color: var(--ubuntu-white); border: none; cursor: pointer; font-weight: 400; }
+    button:hover:not(:disabled) { background: #c73e0f; }
+    button:disabled { background: var(--ubuntu-warm-grey); cursor: not-allowed; }
+
+    .results-section { background: var(--ubuntu-white); padding: 2rem; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); min-height: 300px; }
+    .loading { text-align: center; color: var(--ubuntu-warm-grey); font-style: italic; padding: 3rem; font-size: 1.1rem; }
+
+    .results-header { margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 2px solid #e5e5e5; }
+    .results-title { font-size: 1.8rem; color: var(--ubuntu-aubergine); font-weight: 300; margin-bottom: 0.5rem; }
+    .results-summary { color: var(--ubuntu-warm-grey); font-size: 0.9rem; }
+
+    .word-tables { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+    .word-table-section { min-height: 400px; }
+    .word-table-title { font-size: 1.3rem; color: var(--ubuntu-aubergine); font-weight: 400; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e5e5e5; }
+
+    .word-table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
+    .word-table th, .word-table td { text-align: left; padding: 0.75rem 0.5rem; border-bottom: 1px solid #e5e5e5; }
+    .word-table th { background: #f8f8f8; font-weight: 500; color: var(--ubuntu-dark-grey); position: sticky; top: 0; }
+    .word-table td { color: var(--ubuntu-text); }
+    .word-table tr:hover { background: #f9f9f9; }
+    .word-count { font-weight: 600; color: var(--ubuntu-orange); text-align: right; }
+    .word-actions { text-align: center; width: 60px; }
+    .word-action-btn { background: none; border: none; cursor: pointer; font-size: 1.2rem; padding: 0.25rem 0.5rem; margin: 0 0.1rem; border-radius: 2px; transition: all 0.2s ease; }
+    .word-action-btn.ignore { color: #c82c1c; }
+    .word-action-btn.count  { color: green; }
+    .word-action-btn:hover  { background: #f0f0f0; transform: scale(1.1); }
+
+    .more-button { background: var(--ubuntu-orange); color: var(--ubuntu-white); border: none; padding: 0.5rem 1rem; border-radius: 2px; cursor: pointer; font-size: 0.9rem; margin-top: 1rem; }
+    .more-button:hover { background: #c73e0f; }
+
+    .error { background: #fdf2f2; color: #c53030; padding: 1.5rem; border-radius: 2px; border-left: 3px solid #c53030; margin: 1rem 0; }
+    .info { background: #f0f9ff; color: var(--ubuntu-dark-grey); padding: 2rem; border-radius: 2px; border-left: 3px solid var(--ubuntu-orange); text-align: center; }
+    .info h3 { color: var(--ubuntu-aubergine); font-weight: 300; font-size: 1.5rem; margin-bottom: 1rem; }
+
+    /* Autocomplete */
+    .autocomplete { position: relative; display: block; width: 100%; }
+    .autocomplete-items { position: absolute; border: 1px solid #d4d4d4; border-bottom: none; border-top: none; z-index: 99; top: 100%; left: 0; right: 0; background: white; max-height: 200px; overflow-y: auto; }
+    .autocomplete-items div { padding: 10px; cursor: pointer; background-color: #fff; border-bottom: 1px solid #d4d4d4; }
+    .autocomplete-items div:hover { background-color: #e9e9e9; }
+    .autocomplete-active { background-color: var(--ubuntu-orange) !important; color: #ffffff; }
+
+    @media (max-width: 768px) {
+        .header h1 { font-size: 2rem; }
+        .container { padding: 1rem 10px; }
+        .count-row { flex-direction: column; align-items: flex-start; }
+        .count-group { min-width: auto; width: 100%; }
+        .count-actions button { width: 100%; min-width: auto; }
+        .word-tables { grid-template-columns: 1fr; gap: 1rem; }
+        .word-table th, .word-table td { padding: 0.5rem 0.25rem; font-size: 0.9rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <div class="header">
+        <div class="header-content">
+            <h1>Worte der Bibel zählen</h1>
+            <p class="subtitle">Analysieren Sie die Häufigkeit von Wörtern in Bibelabschnitten</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="count-section">
+            <form class="count-form" id="countForm">
+                <div class="count-row">
+                    <div class="count-group">
+                        <label for="translation">Nach der Übersetzung von:</label>
+                        <select id="translation" required>
+                            <option value="">Übersetzung auswählen...</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="count-row">
+                    <div class="count-group">
+                        <label for="bookFrom">Von Buch:</label>
+                        <div class="autocomplete"><input type="text" id="bookFrom" placeholder="Buch" required></div>
+                    </div>
+                    <div class="count-group">
+                        <label for="chapterFrom">Kapitel:</label>
+                        <select id="chapterFrom" required><option value="">Kapitel wählen</option></select>
+                    </div>
+                    <div class="count-group">
+                        <label for="verseFrom">Vers:</label>
+                        <select id="verseFrom" required><option value="">Vers wählen</option></select>
+                    </div>
+                </div>
+                <div class="count-row">
+                    <div class="count-group">
+                        <label for="bookTo">Bis Buch:</label>
+                        <div class="autocomplete"><input type="text" id="bookTo" placeholder="Buch" required></div>
+                    </div>
+                    <div class="count-group">
+                        <label for="chapterTo">Kapitel:</label>
+                        <select id="chapterTo" required><option value="">Kapitel wählen</option></select>
+                    </div>
+                    <div class="count-group">
+                        <label for="verseTo">Vers:</label>
+                        <select id="verseTo" required><option value="">Vers wählen</option></select>
+                    </div>
+                </div>
+                <div class="count-actions">
+                    <button type="submit" id="countButton" disabled>Zähle</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="results-section" id="resultsSection">
+            <div class="info">
+                <h3>Worte zählen</h3>
+                <p>Hier kann der Benutzer Worte in der Bibel zählen lassen. Dabei legt er den Bibelabschnitt interaktiv fest und erhält alle gezählten Worte in ihrer Häufigkeit absteigend sortiert.</p>
+                <p style="margin-top: 1rem;">Der Abschnitt wird bestimmt von der ersten Stelle mit Buch, Kapitel und Vers bis zur zweiten Stelle mit Buch, Kapitel und Vers.</p>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function escHtml(s) {
+        return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    class WordCounter {
+        constructor() {
+            this.books = [];
+            this.currentCountedWords = [];
+            this.currentIgnoredWords = [];
+            this.countedWordsDisplayed = 10;
+            this.ignoredWordsDisplayed = 10;
+            this.initializeEventListeners();
+            this.loadTranslations();
+        }
+
+        initializeEventListeners() {
+            document.getElementById('countForm').addEventListener('submit', (e) => {
+                e.preventDefault(); this.performCount();
+            });
+            document.getElementById('translation').addEventListener('change', () => {
+                this.loadBooks(); this.updateCountButton();
+            });
+            ['bookFrom','chapterFrom','verseFrom','bookTo','chapterTo','verseTo'].forEach(id => {
+                document.getElementById(id).addEventListener('change', () => {
+                    this.updateCountButton();
+                    if (id === 'bookFrom')    this.loadChaptersFrom();
+                    if (id === 'chapterFrom') this.loadVersesFrom();
+                    if (id === 'bookTo')      this.loadChaptersTo();
+                    if (id === 'chapterTo')   this.loadVersesTo();
+                });
+            });
+            document.getElementById('bookFrom').addEventListener('input', () => this.updateCountButton());
+            document.getElementById('bookTo').addEventListener('input',   () => this.updateCountButton());
+        }
+
+        updateCountButton() {
+            const translation = document.getElementById('translation').value;
+            const bookFrom    = document.getElementById('bookFrom').value.trim();
+            const chapterFrom = document.getElementById('chapterFrom').value;
+            const verseFrom   = document.getElementById('verseFrom').value;
+            const bookTo      = document.getElementById('bookTo').value.trim();
+            const chapterTo   = document.getElementById('chapterTo').value;
+            const verseTo     = document.getElementById('verseTo').value;
+            document.getElementById('countButton').disabled =
+                !(translation && bookFrom && chapterFrom && verseFrom && bookTo && chapterTo && verseTo);
+        }
+
+        async loadTranslations() {
+            try {
+                const response = await fetch('/api/translations');
+                if (!response.ok) throw new Error(`HTTP-Fehler! Status: ${response.status}`);
+                const data = await response.json();
+                const sel = document.getElementById('translation');
+                sel.innerHTML = '<option value="">Übersetzung auswählen...</option>';
+                (data.translations || data).forEach(t => {
+                    const opt = document.createElement('option'); opt.value = t; opt.textContent = t;
+                    sel.appendChild(opt);
+                });
+            } catch (error) { this.showError(`Die Übersetzungsliste konnte nicht geladen werden. Bitte laden Sie die Seite neu. (${error.message})`); }
+        }
+
+        async loadBooks() {
+            const translation = document.getElementById('translation').value;
+            if (!translation) { this.books = []; return; }
+            try {
+                const response = await fetch(`/api/${translation}/books`);
+                if (!response.ok) throw new Error(`HTTP-Fehler! Status: ${response.status}`);
+                const data = await response.json();
+                this.books = data.books.map(b => b.name);
+                this.setupAutocomplete();
+            } catch (error) { this.showError(`Die Bücherliste konnte nicht geladen werden. Bitte laden Sie die Seite neu. (${error.message})`); }
+        }
+
+        setupAutocomplete() {
+            this.autocomplete(document.getElementById('bookFrom'), this.books);
+            this.autocomplete(document.getElementById('bookTo'),   this.books);
+        }
+
+        autocomplete(inp, arr) {
+            let currentFocus;
+            inp.addEventListener('input', function() {
+                let a, b, i, val = this.value;
+                closeAllLists();
+                if (!val) return;
+                currentFocus = -1;
+                a = document.createElement('DIV');
+                a.setAttribute('id', this.id + 'autocomplete-list');
+                a.setAttribute('class', 'autocomplete-items');
+                this.parentNode.appendChild(a);
+                for (i = 0; i < arr.length; i++) {
+                    if (arr[i].substr(0, val.length).toUpperCase() === val.toUpperCase()) {
+                        b = document.createElement('DIV');
+                        b.innerHTML = '<strong>' + arr[i].substr(0, val.length) + '</strong>' + arr[i].substr(val.length);
+                        b.innerHTML += '<input type="hidden" value="' + arr[i] + '">';
+                        b.addEventListener('click', function() {
+                            inp.value = this.getElementsByTagName('input')[0].value;
+                            closeAllLists();
+                            inp.dispatchEvent(new Event('change'));
+                        });
+                        a.appendChild(b);
+                    }
+                }
+            });
+            inp.addEventListener('keydown', function(e) {
+                let x = document.getElementById(this.id + 'autocomplete-list');
+                if (x) x = x.getElementsByTagName('div');
+                if      (e.keyCode === 40) { currentFocus++; addActive(x); }
+                else if (e.keyCode === 38) { currentFocus--; addActive(x); }
+                else if (e.keyCode === 13) {
+                    e.preventDefault();
+                    if (currentFocus > -1 && x) x[currentFocus].click();
+                }
+            });
+            function addActive(x) {
+                if (!x) return;
+                removeActive(x);
+                if (currentFocus >= x.length) currentFocus = 0;
+                if (currentFocus < 0) currentFocus = x.length - 1;
+                x[currentFocus].classList.add('autocomplete-active');
+            }
+            function removeActive(x) {
+                for (let i = 0; i < x.length; i++) x[i].classList.remove('autocomplete-active');
+            }
+            function closeAllLists(elmnt) {
+                document.getElementsByClassName('autocomplete-items');
+                let items = document.getElementsByClassName('autocomplete-items');
+                for (let i = 0; i < items.length; i++) {
+                    if (elmnt !== items[i] && elmnt !== inp) items[i].parentNode.removeChild(items[i]);
+                }
+            }
+            document.addEventListener('click', (e) => closeAllLists(e.target));
+        }
+
+        async loadChaptersFrom() { await this.loadChapters('bookFrom', 'chapterFrom'); }
+        async loadChaptersTo()   { await this.loadChapters('bookTo',   'chapterTo');   }
+        async loadChapters(bookFieldId, chapterFieldId) {
+            const translation = document.getElementById('translation').value;
+            const book        = document.getElementById(bookFieldId).value;
+            const chapterSelect = document.getElementById(chapterFieldId);
+            chapterSelect.innerHTML = '<option value="">Kapitel wählen</option>';
+            if (!translation || !book) return;
+            try {
+                const response = await fetch(`/api/${translation}/${book}/chapter-count`);
+                if (!response.ok) throw new Error(`HTTP-Fehler! Status: ${response.status}`);
+                const data = await response.json();
+                for (let i = 1; i <= data.chapters; i++) {
+                    const opt = document.createElement('option'); opt.value = i; opt.textContent = i;
+                    chapterSelect.appendChild(opt);
+                }
+            } catch (error) { this.showError(`Die Kapitelliste konnte nicht geladen werden. Bitte wählen Sie ein anderes Buch oder laden Sie die Seite neu. (${error.message})`); }
+        }
+
+        async loadVersesFrom() { await this.loadVerses('bookFrom', 'chapterFrom', 'verseFrom'); }
+        async loadVersesTo()   { await this.loadVerses('bookTo',   'chapterTo',   'verseTo');   }
+        async loadVerses(bookFieldId, chapterFieldId, verseFieldId) {
+            const translation   = document.getElementById('translation').value;
+            const book          = document.getElementById(bookFieldId).value;
+            const chapter       = document.getElementById(chapterFieldId).value;
+            const verseSelect   = document.getElementById(verseFieldId);
+            verseSelect.innerHTML = '<option value="">Vers wählen</option>';
+            if (!translation || !book || !chapter) return;
+            try {
+                const response = await fetch(`/api/${translation}/${book}/${chapter}/verse-count`);
+                if (!response.ok) throw new Error(`HTTP-Fehler! Status: ${response.status}`);
+                const data = await response.json();
+                for (let i = 1; i <= data.verses; i++) {
+                    const opt = document.createElement('option'); opt.value = i; opt.textContent = i;
+                    verseSelect.appendChild(opt);
+                }
+            } catch (error) { this.showError(`Die Versliste konnte nicht geladen werden. Bitte wählen Sie ein anderes Kapitel oder laden Sie die Seite neu. (${error.message})`); }
+        }
+
+        async performCount() {
+            const translation = document.getElementById('translation').value;
+            const bookFrom    = document.getElementById('bookFrom').value.trim();
+            const chapterFrom = parseInt(document.getElementById('chapterFrom').value);
+            const verseFrom   = parseInt(document.getElementById('verseFrom').value);
+            const bookTo      = document.getElementById('bookTo').value.trim();
+            const chapterTo   = parseInt(document.getElementById('chapterTo').value);
+            const verseTo     = parseInt(document.getElementById('verseTo').value);
+            if (!translation || !bookFrom || !bookTo) { this.showError('Bitte wählen Sie eine Übersetzung sowie ein Start- und Endbuch aus (z.B. Von: „Genesis" Bis: „Offenbarung"). Kapitel und Vers werden automatisch auf 1 bzw. das letzte gesetzt.'); return; }
+            this.showLoading('Wörter werden gezählt...');
+            try {
+                const p = new URLSearchParams({ translation, book_from: bookFrom, chapter_from: chapterFrom, verse_from: verseFrom, book_to: bookTo, chapter_to: chapterTo, verse_to: verseTo });
+                const response = await fetch(`/api/count?${p}`);
+                if (!response.ok) throw new Error(`HTTP-Fehler! Status: ${response.status}`);
+                this.displayResults(await response.json());
+            } catch (error) { this.showError(`Die Wortzählung konnte nicht durchgeführt werden. Bitte prüfen Sie, ob Start und Ende einen gültigen Bereich ergeben (Start muss vor dem Ende liegen). (${error.message})`); }
+        }
+
+        displayResults(data) {
+            const resultsSection = document.getElementById('resultsSection');
+            this.currentCountedWords = data.counted_words || [];
+            this.currentIgnoredWords = data.ignored_words || [];
+            this.countedWordsDisplayed = 10;
+            this.ignoredWordsDisplayed = 10;
+            resultsSection.innerHTML = `
+                <div class="results-header">
+                    <h2 class="results-title">Wortzählung</h2>
+                    <div class="results-summary">Es wurden ${data.total_unique_words} unterschiedliche Wörter von ${escHtml(data.section.book_from)} ${data.section.chapter_from},${data.section.verse_from} bis ${escHtml(data.section.book_to)} ${data.section.chapter_to},${data.section.verse_to} gezählt.</div>
+                    <div class="results-summary" style="margin-top:0.5rem;">Die Tabellen zeigen jeweils die Anzahl (#) für jedes Wort. Mit <span style="color:#c82c1c;font-weight:bold;">&#8722;</span> oder <span style="color:green;font-weight:bold;">+</span> kann ein Wort ignoriert oder gezählt werden.</div>
+                </div>
+                <div class="word-tables">
+                    <div class="word-table-section">
+                        <h3 class="word-table-title">Gezählte Wörter (${data.summary.total_counted})</h3>
+                        <table class="word-table" id="countedWordsTable">
+                            <thead><tr><th>Wort</th><th style="text-align:right;">#</th><th style="text-align:center;">Aktion</th></tr></thead>
+                            <tbody id="countedWordsBody"></tbody>
+                        </table>
+                        <button class="more-button" id="countedMoreBtn" onclick="wordCounter.showMoreCounted()">Mehr</button>
+                    </div>
+                    <div class="word-table-section">
+                        <h3 class="word-table-title">Ignorierte Wörter (${data.summary.total_ignored})</h3>
+                        <table class="word-table" id="ignoredWordsTable">
+                            <thead><tr><th>Wort</th><th style="text-align:right;">#</th><th style="text-align:center;">Aktion</th></tr></thead>
+                            <tbody id="ignoredWordsBody"></tbody>
+                        </table>
+                        <button class="more-button" id="ignoredMoreBtn" onclick="wordCounter.showMoreIgnored()">Mehr</button>
+                    </div>
+                </div>`;
+            this.updateWordTables();
+        }
+
+        updateWordTables() { this.updateCountedWordsTable(); this.updateIgnoredWordsTable(); }
+
+        updateCountedWordsTable() {
+            const tbody   = document.getElementById('countedWordsBody');
+            const moreBtn = document.getElementById('countedMoreBtn');
+            tbody.innerHTML = '';
+            this.currentCountedWords.slice(0, this.countedWordsDisplayed).forEach((w, i) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td>${escHtml(w.word)}</td><td class="word-count">${w.count}</td><td class="word-actions"><button class="word-action-btn ignore" onclick="wordCounter.moveToIgnored(${i})" title="Ignorieren">&#8722;</button></td>`;
+                tbody.appendChild(row);
+            });
+            moreBtn.style.display = this.countedWordsDisplayed < this.currentCountedWords.length ? 'inline-block' : 'none';
+        }
+
+        updateIgnoredWordsTable() {
+            const tbody   = document.getElementById('ignoredWordsBody');
+            const moreBtn = document.getElementById('ignoredMoreBtn');
+            tbody.innerHTML = '';
+            this.currentIgnoredWords.slice(0, this.ignoredWordsDisplayed).forEach((w, i) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td>${escHtml(w.word)}</td><td class="word-count">${w.count}</td><td class="word-actions"><button class="word-action-btn count" onclick="wordCounter.moveToCounted(${i})" title="Zählen">+</button></td>`;
+                tbody.appendChild(row);
+            });
+            moreBtn.style.display = this.ignoredWordsDisplayed < this.currentIgnoredWords.length ? 'inline-block' : 'none';
+        }
+
+        showMoreCounted() { this.countedWordsDisplayed += 10; this.updateCountedWordsTable(); }
+        showMoreIgnored() { this.ignoredWordsDisplayed += 10; this.updateIgnoredWordsTable(); }
+
+        moveToIgnored(index) {
+            const word = this.currentCountedWords.splice(index, 1)[0];
+            this.currentIgnoredWords.push(word);
+            this.currentIgnoredWords.sort((a,b) => b.count - a.count);
+            this.updateWordTables();
+        }
+        moveToCounted(index) {
+            const word = this.currentIgnoredWords.splice(index, 1)[0];
+            this.currentCountedWords.push(word);
+            this.currentCountedWords.sort((a,b) => b.count - a.count);
+            this.updateWordTables();
+        }
+
+        showLoading(message) { document.getElementById('resultsSection').innerHTML = `<div class="loading">${escHtml(message)}</div>`; }
+        showError(message)   { document.getElementById('resultsSection').innerHTML = `<div class="error"><strong>Fehler:</strong> ${escHtml(message)}</div>`; }
+    }
+
+    const wordCounter = new WordCounter();
+</script>
+{% endblock %}
