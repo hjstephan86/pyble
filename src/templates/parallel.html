@@ -1,0 +1,451 @@
+{% extends "base.html" %}
+{% set active_page = "parallel" %}
+
+{% block title %}Die Bibel - Parallelvergleich{% endblock %}
+
+{% block head_extra %}
+<style>
+    .header { background: var(--ubuntu-aubergine); color: var(--ubuntu-white); padding: 2rem 0; }
+    .header-content { max-width: 1200px; margin: 0 auto; padding: 0 20px; text-align: center; }
+    .header h1 { font-size: 2.5rem; font-weight: 300; margin-bottom: 0.5rem; color: var(--ubuntu-white); }
+    .header .subtitle { font-size: 1.1rem; opacity: 0.9; font-weight: 300; }
+
+    .container { max-width: 1400px; margin: 0 auto; padding: 2rem 20px; }
+
+    .input-box { background: #ffffff; border: 1px solid #d1d1d1; border-radius: 4px; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); width: 100%; }
+    .control-row { display: block; gap: 1rem; align-items: flex-end; }
+    .control-group { flex: 1; min-width: 200px; }
+    .control-group.chapter-group { margin-top: 1.5rem; }
+
+    label { display: block; font-weight: 400; color: var(--ubuntu-dark-grey); margin-bottom: 0.5rem; font-size: 0.9rem; }
+    select, button {
+        width: 100%; padding: 0.75rem; border: 1px solid #d1d1d1;
+        border-radius: 2px; font-size: 1rem; font-family: inherit; transition: all 0.2s ease;
+    }
+    select { background: var(--ubuntu-white); color: var(--ubuntu-text); }
+    select:focus { outline: none; border-color: var(--ubuntu-orange); box-shadow: 0 0 0 2px rgba(221,72,20,0.2); }
+    select:disabled { background: #f5f5f5; color: #999; cursor: not-allowed; }
+    button { background: var(--ubuntu-orange); color: var(--ubuntu-white); border: none; cursor: pointer; font-weight: 400; }
+    button:hover:not(:disabled) { background: #c73e0f; }
+    button:disabled { background: var(--ubuntu-warm-grey); cursor: not-allowed; }
+
+    .translations-section { background: var(--ubuntu-white); padding: 1.5rem; border-radius: 4px; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .translations-title { font-size: 1.2rem; color: var(--ubuntu-aubergine); font-weight: 400; margin-bottom: 1rem; }
+    .translation-checkboxes { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .checkbox-group { display: flex; align-items: center; gap: 0.5rem; }
+    .checkbox-group input[type="checkbox"] { width: auto; margin: 0; }
+    .checkbox-group label { margin: 0; font-size: 0.9rem; cursor: pointer; }
+
+    .load-button-container { display: block; justify-content: center; margin-top: 1rem; }
+    .load-button { padding: 0.6rem 2rem; font-size: 0.95rem; width: 100%; min-width: 180px; max-width: none; background: var(--ubuntu-orange); margin: 0; }
+    .load-button:hover:not(:disabled) { background: #c73e0f; }
+    .load-button:disabled { background: var(--ubuntu-warm-grey); cursor: not-allowed; }
+
+    .results-section { background: var(--ubuntu-white); padding: 2rem; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); min-height: 500px; }
+    .loading { text-align: center; color: var(--ubuntu-warm-grey); font-style: italic; padding: 3rem; font-size: 1.1rem; }
+
+    .parallel-header { text-align: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 2px solid #e5e5e5; }
+    .parallel-title { font-size: 1.8rem; color: var(--ubuntu-aubergine); font-weight: 300; margin-bottom: 0.5rem; }
+    .parallel-reference { color: var(--ubuntu-warm-grey); font-size: 1rem; }
+
+    /* ── Spaltenköpfe (sticky) ───────────────────────────────────────── */
+    .parallel-thead {
+        display: grid;
+        gap: 0;
+        position: sticky;
+        top: 60px;          /* Höhe der Nav-Leiste */
+        z-index: 100;
+        background: var(--ubuntu-white);
+        border-bottom: 2px solid var(--ubuntu-orange);
+        margin-bottom: 0;
+    }
+    .col-header {
+        padding: 0.6rem 0.75rem;
+        font-size: 1rem;
+        font-weight: 500;
+        color: var(--ubuntu-white);
+        background: var(--ubuntu-aubergine);
+        text-align: center;
+    }
+    .col-header:nth-child(2n) { background: #5a1f21; }
+    .col-header:nth-child(3n) { background: var(--ubuntu-dark-grey); }
+    .col-header:nth-child(4n) { background: #3a3a3a; }
+
+    /* ── Zeilen-Grid: eine Zeile pro Vers ───────────────────────────── */
+    .parallel-grid {
+        display: grid;
+        gap: 0;
+    }
+
+    /* Jede Verszeile ist selbst wieder ein Grid mit denselben Spaltenbreiten */
+    .verse-row {
+        display: grid;
+        gap: 0;
+        border-bottom: 1px solid #ebebeb;
+    }
+    .verse-row:nth-child(odd)  { background: #fafafa; }
+    .verse-row:nth-child(even) { background: var(--ubuntu-white); }
+    .verse-row:hover { background: #f0f5ff; }
+
+    .verse-cell {
+        padding: 0.6rem 0.75rem;
+        line-height: 1.65;
+        font-size: 0.97rem;
+        color: var(--ubuntu-text);
+        border-right: 1px solid #e0e0e0;
+        /* Vertikale Ausrichtung oben – alle Zellen beginnen auf gleicher Höhe */
+        align-self: start;
+    }
+    .verse-cell:last-child { border-right: none; }
+
+    .verse-num {
+        font-weight: 700;
+        color: var(--ubuntu-orange);
+        font-size: 0.8rem;
+        display: inline-block;
+        min-width: 1.6rem;
+        vertical-align: top;
+        margin-right: 0.3rem;
+        padding-top: 0.15rem;
+    }
+
+    /* ── Responsive Spaltenbreiten (2–5 Übersetzungen) ─────────────────
+       Grundregel: maximal 2 Spalten auf schmalen Bildschirmen.
+       Breitere Layouts schalten sich über min-width-Breakpoints zu.
+       ─────────────────────────────────────────────────────────────────── */
+
+    /* 2 Spalten: ab 640 px nebeneinander, darunter untereinander */
+    .cols-2 .parallel-thead,
+    .cols-2 .parallel-grid .verse-row { grid-template-columns: 1fr; }
+
+    @media (min-width: 640px) {
+        .cols-2 .parallel-thead,
+        .cols-2 .parallel-grid .verse-row { grid-template-columns: 1fr 1fr; }
+    }
+
+    /* 3 Spalten: ab 1100 px nebeneinander, darunter 2, ab 640 px 2 */
+    .cols-3 .parallel-thead,
+    .cols-3 .parallel-grid .verse-row { grid-template-columns: 1fr; }
+
+    @media (min-width: 640px) {
+        .cols-3 .parallel-thead,
+        .cols-3 .parallel-grid .verse-row { grid-template-columns: 1fr 1fr; }
+    }
+    @media (min-width: 1100px) {
+        .cols-3 .parallel-thead,
+        .cols-3 .parallel-grid .verse-row { grid-template-columns: 1fr 1fr 1fr; }
+    }
+
+    /* 4 Spalten: ab 1400 px alle 4, ab 900 px 2, darunter 1 */
+    .cols-4 .parallel-thead,
+    .cols-4 .parallel-grid .verse-row { grid-template-columns: 1fr; }
+
+    @media (min-width: 640px) {
+        .cols-4 .parallel-thead,
+        .cols-4 .parallel-grid .verse-row { grid-template-columns: 1fr 1fr; }
+    }
+    @media (min-width: 1400px) {
+        .cols-4 .parallel-thead,
+        .cols-4 .parallel-grid .verse-row { grid-template-columns: 1fr 1fr 1fr 1fr; }
+    }
+
+    /* 5 Spalten: ab 1800 px alle 5, ab 1100 px 3, ab 640 px 2, darunter 1 */
+    .cols-5 .parallel-thead,
+    .cols-5 .parallel-grid .verse-row { grid-template-columns: 1fr; }
+
+    @media (min-width: 640px) {
+        .cols-5 .parallel-thead,
+        .cols-5 .parallel-grid .verse-row { grid-template-columns: 1fr 1fr; }
+    }
+    @media (min-width: 1100px) {
+        .cols-5 .parallel-thead,
+        .cols-5 .parallel-grid .verse-row { grid-template-columns: 1fr 1fr 1fr; }
+    }
+    @media (min-width: 1800px) {
+        .cols-5 .parallel-thead,
+        .cols-5 .parallel-grid .verse-row { grid-template-columns: 1fr 1fr 1fr 1fr 1fr; }
+    }
+
+    .chapter-navigation { display: flex; justify-content: center; gap: 1rem; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #e5e5e5; }
+    .chapter-nav-btn { padding: 0.5rem 1rem; font-size: 0.9rem; width: auto; min-width: 120px; background: var(--ubuntu-aubergine); }
+    .chapter-nav-btn:hover { background: #5a1f21; }
+
+    .error { background: #fdf2f2; color: #c53030; padding: 1.5rem; border-radius: 2px; border-left: 3px solid #c53030; margin: 1rem 0; }
+    .info { background: #f0f9ff; color: var(--ubuntu-dark-grey); padding: 2rem; border-radius: 2px; border-left: 3px solid var(--ubuntu-orange); text-align: center; }
+    .info h3 { color: var(--ubuntu-aubergine); font-weight: 300; font-size: 1.5rem; margin-bottom: 1rem; }
+
+    @media (max-width: 768px) {
+        .header h1 { font-size: 2rem; }
+        .container { padding: 1rem 10px; }
+        .control-group { min-width: auto; width: 100%; }
+        .control-group.chapter-group { margin-top: 1rem; }
+        .translation-checkboxes { grid-template-columns: 1fr; }
+        .verse-cell { border-right: none; border-bottom: 1px solid #e0e0e0; }
+        .verse-cell:last-child { border-bottom: none; }
+        .chapter-navigation { flex-direction: column; align-items: center; }
+        .chapter-nav-btn { width: 200px; }
+        .load-button { min-width: 200px; }
+        .parallel-thead { position: static; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <div class="header">
+        <div class="header-content">
+            <h1>Parallelvergleich</h1>
+            <p class="subtitle">Vergleichen Sie verschiedene Bibelübersetzungen nebeneinander</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="controls-section">
+            <div class="control-row">
+                <div class="input-box">
+                    <div class="control-group">
+                        <label for="book">Buch:</label>
+                        <select id="book"><option value="">Buch auswählen...</option></select>
+                    </div>
+                    <div class="control-group chapter-group">
+                        <label for="chapter">Kapitel:</label>
+                        <select id="chapter" disabled><option value="">Kapitel auswählen...</option></select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="translations-section">
+            <h3 class="translations-title">Übersetzungen auswählen (2 bis 5):</h3>
+            <div class="translation-checkboxes" id="translationCheckboxes"></div>
+            <div class="load-button-container">
+                <button id="loadParallel" class="load-button" disabled>Vergleich laden</button>
+            </div>
+        </div>
+
+        <div class="results-section">
+            <div class="info">
+                <h3>Parallelvergleich</h3>
+                <p>Wählen Sie mindestens zwei Übersetzungen, ein Buch und ein Kapitel aus, um verschiedene Bibelübersetzungen nebeneinander zu vergleichen.</p>
+                <p style="margin-top: 1rem; font-size: 0.9rem;"><strong>Tipp:</strong> Alle Verse stehen zeilenweise ausgerichtet – jeder Vers beginnt in allen Übersetzungen auf exakt gleicher Höhe.</p>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function escHtml(s) {
+        return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    class ParallelBible {
+        constructor() {
+            this.availableTranslations = [];
+            this.selectedTranslations  = [];
+            this.currentBook    = '';
+            this.currentChapter = 0;
+            this.initializeEventListeners();
+            this.loadTranslations();
+        }
+
+        initializeEventListeners() {
+            document.getElementById('book').addEventListener('change', (e) => this.handleBookChange(e.target.value));
+            document.getElementById('chapter').addEventListener('change', (e) => this.handleChapterChange(parseInt(e.target.value)));
+            document.getElementById('loadParallel').addEventListener('click', () => this.loadParallelChapter());
+        }
+
+        async loadTranslations() {
+            try {
+                this.showLoading('Übersetzungen werden geladen...');
+                const response = await fetch('/api/translations');
+                if (!response.ok) throw new Error(`HTTP-Fehler! Status: ${response.status}`);
+                const data = await response.json();
+                this.availableTranslations = data.translations || data;
+                this.populateTranslationCheckboxes();
+                this.loadBooksForFirstTranslation();
+            } catch (error) { this.showError(`Die verfügbaren Übersetzungen konnten nicht geladen werden. Bitte prüfen Sie, ob der Server läuft, und laden Sie die Seite neu. (${error.message})`); }
+        }
+
+        populateTranslationCheckboxes() {
+            const container = document.getElementById('translationCheckboxes');
+            container.innerHTML = '';
+            this.availableTranslations.forEach(translation => {
+                const div = document.createElement('div'); div.className = 'checkbox-group';
+                const cb  = document.createElement('input'); cb.type = 'checkbox'; cb.id = `translation-${translation}`; cb.value = translation;
+                cb.addEventListener('change', (e) => this.handleTranslationSelection(e.target.value, e.target.checked));
+                const lbl = document.createElement('label'); lbl.htmlFor = `translation-${translation}`; lbl.textContent = translation;
+                div.appendChild(cb); div.appendChild(lbl);
+                container.appendChild(div);
+            });
+        }
+
+        handleTranslationSelection(translation, isSelected) {
+            if (isSelected) {
+                if (this.selectedTranslations.length >= 5) {
+                    // Checkbox wieder deaktivieren und Hinweis zeigen
+                    document.getElementById(`translation-${translation}`).checked = false;
+                    alert('Es können maximal 5 Übersetzungen gleichzeitig verglichen werden.');
+                    return;
+                }
+                if (!this.selectedTranslations.includes(translation))
+                    this.selectedTranslations.push(translation);
+            } else {
+                this.selectedTranslations = this.selectedTranslations.filter(t => t !== translation);
+            }
+            this.updateLoadButton();
+        }
+
+        updateLoadButton() {
+            document.getElementById('loadParallel').disabled =
+                !(this.currentBook && this.currentChapter > 0 && this.selectedTranslations.length >= 2);
+        }
+
+        async loadBooksForFirstTranslation() {
+            if (this.availableTranslations.length === 0) return;
+            try {
+                const response = await fetch(`/api/${this.availableTranslations[0]}/books`);
+                if (!response.ok) throw new Error(`HTTP-Fehler! Status: ${response.status}`);
+                const data = await response.json();
+                this.populateBooks(data.books);
+            } catch (error) { this.showError(`Die Bücherliste konnte nicht geladen werden. Bitte laden Sie die Seite neu. (${error.message})`); }
+        }
+
+        populateBooks(books) {
+            const bookSelect = document.getElementById('book');
+            bookSelect.innerHTML = '<option value="">Buch auswählen...</option>';
+            books.forEach(book => {
+                const opt = document.createElement('option'); opt.value = book.name; opt.textContent = `${book.name} (${book.chapters} Kapitel)`;
+                bookSelect.appendChild(opt);
+            });
+            this.clearResults();
+        }
+
+        handleBookChange(bookName) {
+            if (!bookName) return;
+            this.currentBook = bookName;
+            this.resetChapter();
+            this.loadChaptersForBook(bookName);
+        }
+
+        handleChapterChange(chapterNum) {
+            this.currentChapter = chapterNum;
+            this.updateLoadButton();
+            if (chapterNum && this.selectedTranslations.length >= 2) this.loadParallelChapter();
+        }
+
+        async loadChaptersForBook(bookName) {
+            if (this.availableTranslations.length === 0) return;
+            try {
+                const response = await fetch(`/api/${this.availableTranslations[0]}/${encodeURIComponent(bookName)}/chapters`);
+                if (!response.ok) throw new Error(`HTTP-Fehler! Status: ${response.status}`);
+                const data = await response.json();
+                this.populateChapters(data.chapters);
+            } catch (error) { this.showError(`Die Kapitelliste konnte nicht geladen werden. Bitte wählen Sie ein anderes Buch oder laden Sie die Seite neu. (${error.message})`); }
+        }
+
+        populateChapters(chapters) {
+            const chapterSelect = document.getElementById('chapter');
+            chapterSelect.innerHTML = '<option value="">Kapitel auswählen...</option>';
+            chapters.forEach(chapter => {
+                const opt = document.createElement('option'); opt.value = chapter.chapter; opt.textContent = `Kapitel ${chapter.chapter} (${chapter.verses} Verse)`;
+                chapterSelect.appendChild(opt);
+            });
+            chapterSelect.disabled = false;
+        }
+
+        async loadParallelChapter() {
+            if (this.selectedTranslations.length < 2 || !this.currentBook || !this.currentChapter) {
+                this.showError('Bitte wählen Sie mindestens 2 Übersetzungen (z.B. „Luther 1912" und „Elberfelder 1905"), ein Buch (z.B. „Römer") und ein Kapitel aus, um den Parallelvergleich zu starten.'); return;
+            }
+            this.showLoading('Parallelvergleich wird geladen...');
+            try {
+                const promises = this.selectedTranslations.map(t =>
+                    fetch(`/api/${t}/${encodeURIComponent(this.currentBook)}/${this.currentChapter}`)
+                        .then(r => { if (!r.ok) throw new Error(`HTTP-Fehler für ${t}! Status: ${r.status}`); return r.json(); })
+                );
+                this.displayParallelResults(await Promise.all(promises));
+            } catch (error) { this.showError(`Der Parallelvergleich konnte nicht geladen werden. Bitte prüfen Sie, ob alle gewählten Übersetzungen das Buch „${this.currentBook}" enthalten (nicht alle Übersetzungen haben den gleichen Umfang). (${error.message})`); }
+        }
+
+        displayParallelResults(results) {
+            const n = results.length;
+            const colClass = `cols-${Math.min(n, 5)}`;
+
+            // Alle vorkommenden Versnummern (Union über alle Übersetzungen, sortiert)
+            const allVerses = [...new Set(
+                results.flatMap(r => Object.keys(r.verses).map(Number))
+            )].sort((a, b) => a - b);
+
+            // Kopfzeile mit Übersetzungsnamen
+            let thead = `<div class="parallel-thead">`;
+            results.forEach(r => {
+                thead += `<div class="col-header">${escHtml(r.translation)}</div>`;
+            });
+            thead += `</div>`;
+
+            // Zeilen: eine pro Versnummer
+            let rows = '';
+            allVerses.forEach(verseNum => {
+                rows += `<div class="verse-row">`;
+                results.forEach(r => {
+                    const text = r.verses[verseNum] ?? '';
+                    rows += `<div class="verse-cell">` +
+                            `<span class="verse-num">${verseNum}</span>` +
+                            `${escHtml(text)}` +
+                            `</div>`;
+                });
+                rows += `</div>`;
+            });
+
+            const resultsSection = document.querySelector('.results-section');
+            resultsSection.innerHTML =
+                `<div class="parallel-header">` +
+                    `<h2 class="parallel-title">${escHtml(this.currentBook)} Kapitel ${this.currentChapter}</h2>` +
+                    `<p class="parallel-reference">Vergleich von ${n} Übersetzungen – ${allVerses.length} Verse</p>` +
+                `</div>` +
+                `<div class="${colClass}">` +
+                    thead +
+                    `<div class="parallel-grid">${rows}</div>` +
+                `</div>` +
+                this.createChapterNavigation();
+        }
+
+        createChapterNavigation() {
+            const options = Array.from(document.getElementById('chapter').options).slice(1);
+            let navHtml = '<div class="chapter-navigation">';
+            const prev = this.currentChapter - 1;
+            if (prev >= 1 && options.some(o => parseInt(o.value) === prev))
+                navHtml += `<button class="chapter-nav-btn" onclick="parallelBible.navigateToChapter(${prev})">← Kapitel ${prev}</button>`;
+            const next = this.currentChapter + 1;
+            if (options.some(o => parseInt(o.value) === next))
+                navHtml += `<button class="chapter-nav-btn" onclick="parallelBible.navigateToChapter(${next})">Kapitel ${next} →</button>`;
+            navHtml += '</div>';
+            return navHtml;
+        }
+
+        navigateToChapter(chapterNum) {
+            document.getElementById('chapter').value = chapterNum;
+            this.currentChapter = chapterNum;
+            this.loadParallelChapter();
+        }
+
+        resetChapter() {
+            this.currentChapter = 0;
+            const chapterSelect = document.getElementById('chapter');
+            chapterSelect.innerHTML = '<option value="">Kapitel auswählen...</option>';
+            chapterSelect.disabled = true;
+            this.updateLoadButton();
+        }
+
+        showLoading(message) { document.querySelector('.results-section').innerHTML = `<div class="loading">${escHtml(message)}</div>`; }
+        showError(message)   { document.querySelector('.results-section').innerHTML = `<div class="error"><strong>Fehler:</strong> ${escHtml(message)}</div>`; }
+        clearResults() {
+            document.querySelector('.results-section').innerHTML =
+                `<div class="info"><h3>Parallelvergleich</h3>` +
+                `<p>Wählen Sie mindestens zwei Übersetzungen, ein Buch und ein Kapitel aus, um verschiedene Bibelübersetzungen nebeneinander zu vergleichen.</p></div>`;
+        }
+    }
+
+    const parallelBible = new ParallelBible();
+</script>
+{% endblock %}
