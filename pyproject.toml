@@ -9,7 +9,7 @@ requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.24.0",
-    "jinja2>=3.1.4,<3.2",
+    "jinja2>=3.1.4",
     "python-multipart>=0.0.6",
 ]
 
@@ -37,5 +37,5 @@ omit = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["."]
+pythonpath = [".", "src"]
 addopts = "--cov=src --cov-report=html:doc/coverage --cov-report=term-missing --ignore=tests/test_ui_playwright.py"

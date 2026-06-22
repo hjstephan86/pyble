@@ -2,7 +2,7 @@ import re
 import logging
 from collections import Counter
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -13,11 +13,14 @@ from strong_manager import StrongManager
 
 logger = logging.getLogger(__name__)
 
-bible_manager = BibleManager()
-strong_manager = StrongManager()
-
-IGNORE_WORDS_DE: set = set()
-IGNORE_WORDS_EN: set = set()
+# ---------------------------------------------------------------------------
+# Singletons – werden beim Start einmalig befüllt und dann per Depends
+# in alle Routen injiziert. Kein globaler Zugriff außerhalb dieser Datei.
+# ---------------------------------------------------------------------------
+_bible_manager = BibleManager()
+_strong_manager = StrongManager()
+_ignore_words_de: set = set()
+_ignore_words_en: set = set()
 
 # Übersetzungen, die Englisch verwenden
 ENGLISH_TRANSLATIONS = {"WEB", "KJV", "KJV1611", "NKJV", "NIV", "ESV"}
@@ -34,19 +37,23 @@ def load_ignore_words(file_path: str = "ignore_words_de.txt") -> set:
                     continue
                 words.add(line.lower())
     except FileNotFoundError:
-        print(f"Warning: Ignore word list {file_path} not found")
+        logger.warning("Ignore word list %s not found", file_path)
     return words
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup- und Shutdown-Logik via lifespan context manager."""
-    global IGNORE_WORDS_DE, IGNORE_WORDS_EN
-    bible_manager.load_bibles()
-    strong_manager.load()
-    IGNORE_WORDS_DE = load_ignore_words("ignore_words_de.txt")
-    IGNORE_WORDS_EN = load_ignore_words("ignore_words_en.txt")
-    print(f"Loaded {len(IGNORE_WORDS_DE)} ignore words (DE), {len(IGNORE_WORDS_EN)} (EN)")
+    global _ignore_words_de, _ignore_words_en
+    _bible_manager.load_bibles()
+    _strong_manager.load()
+    _ignore_words_de = load_ignore_words("ignore_words_de.txt")
+    _ignore_words_en = load_ignore_words("ignore_words_en.txt")
+    logger.info(
+        "Loaded %d ignore words (DE), %d (EN)",
+        len(_ignore_words_de),
+        len(_ignore_words_en),
+    )
     yield
     # Hier könnten Shutdown-Aufräumarbeiten stehen
 
@@ -63,11 +70,42 @@ app = FastAPI(
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+
+# ---------------------------------------------------------------------------
+# Dependency-Funktionen
+# ---------------------------------------------------------------------------
+
+def get_bible_manager() -> BibleManager:
+    """Dependency: liefert den BibleManager-Singleton."""
+    return _bible_manager
+
+
+def get_strong_manager() -> StrongManager:
+    """Dependency: liefert den StrongManager-Singleton."""
+    return _strong_manager
+
+
+def get_ignore_words_de() -> set:
+    """Dependency: liefert die deutsche Stoppwortliste."""
+    return _ignore_words_de
+
+
+def get_ignore_words_en() -> set:
+    """Dependency: liefert die englische Stoppwortliste."""
+    return _ignore_words_en
+
+
+# ---------------------------------------------------------------------------
 # Web Interface Routes
+# ---------------------------------------------------------------------------
+
 @app.get("/", response_class=HTMLResponse)
-async def read_root(request: Request):
+async def read_root(
+    request: Request,
+    bm: BibleManager = Depends(get_bible_manager),
+):
     """Serve the main HTML interface"""
-    translations = bible_manager.get_translation_names()
+    translations = bm.get_translation_names()
     return templates.TemplateResponse(request, "home.html", {
         "translations": translations
     })
@@ -77,9 +115,9 @@ async def home_page(request: Request):
     return templates.TemplateResponse(request, "home.html")
 
 @app.get("/read.html", response_class=HTMLResponse)
-async def read_page(request: Request):
+async def read_page_html(request: Request):
     return templates.TemplateResponse(request, "read.html")
-    
+
 @app.get("/read", response_class=HTMLResponse)
 async def read_page(request: Request):
     return templates.TemplateResponse(request, "read.html")
@@ -103,141 +141,111 @@ async def parallel_page(request: Request):
 @app.get("/about.html", response_class=HTMLResponse)
 async def about_page(request: Request):
     return templates.TemplateResponse(request, "about.html")
-    
+
+
+# ---------------------------------------------------------------------------
 # API Endpoints
+# ---------------------------------------------------------------------------
+
 @app.get("/api/translations", response_model=BibleListResponse)
-async def list_translations():
+async def list_translations(bm: BibleManager = Depends(get_bible_manager)):
     """Get list of available Bible translations"""
-    return BibleListResponse(translations=bible_manager.get_translation_names())
+    return BibleListResponse(translations=bm.get_translation_names())
+
+@app.get("/api/strong/number/{strong_id}")
+async def get_strong_by_number(
+    strong_id: str,
+    sm: StrongManager = Depends(get_strong_manager),
+):
+    """Nachschlagen eines Strong-Eintrags per Nummer, z.B. H1, G25, 430"""
+    if not sm.is_loaded:
+        raise HTTPException(status_code=503, detail="Strong-Konkordanz noch nicht geladen")
+
+    entry = sm.lookup_by_number(strong_id)
+    if entry is None:
+        raise HTTPException(status_code=404, detail=f"Strong-Nummer '{strong_id}' nicht gefunden")
+
+    return sm.entry_to_dict(entry)
+
+
+@app.get("/api/strong/word")
+async def search_strong_by_word(
+    word: str,
+    language: str = "",
+    sm: StrongManager = Depends(get_strong_manager),
+):
+    """
+    Suche nach einem Wort in der Strong-Konkordanz.
+    language: 'hebrew', 'greek' oder '' (beide)
+    """
+    if not sm.is_loaded:
+        raise HTTPException(status_code=503, detail="Strong-Konkordanz noch nicht geladen")
+
+    if not word or len(word.strip()) < 2:
+        raise HTTPException(status_code=400, detail="Suchbegriff muss mindestens 2 Zeichen lang sein")
+
+    results = sm.search_by_word(word.strip(), language)
+
+    return {
+        "query": word,
+        "language": language or "all",
+        "total": len(results),
+        "results": [sm.entry_to_dict(e) for e in results[:50]],
+    }
+
 
 @app.get("/api/{translation}/books")
-async def get_books(translation: str):
+async def get_books(
+    translation: str,
+    bm: BibleManager = Depends(get_bible_manager),
+):
     """Get list of books for a specific translation"""
-    bible = bible_manager.get_bible(translation)
+    bible = bm.get_bible(translation)
     if not bible:
         raise HTTPException(status_code=404, detail=f"Translation '{translation}' not found")
-    
+
     books = []
     for book_name in bible.get_book_names():
         books.append({
             "name": book_name,
             "chapters": bible.get_chapter_count(book_name)
         })
-    
+
     return {"translation": translation, "books": books}
 
-@app.get("/api/strong/number/{strong_id}")
-async def get_strong_by_number(strong_id: str):
-    """Nachschlagen eines Strong-Eintrags per Nummer, z.B. H1, G25, 430"""
-    if not strong_manager.is_loaded:
-        raise HTTPException(status_code=503, detail="Strong-Konkordanz noch nicht geladen")
-
-    entry = strong_manager.lookup_by_number(strong_id)
-    if entry is None:
-        raise HTTPException(status_code=404, detail=f"Strong-Nummer '{strong_id}' nicht gefunden")
-
-    return strong_manager.entry_to_dict(entry)
-
-
-@app.get("/api/strong/word")
-async def search_strong_by_word(word: str, language: str = ""):
-    """
-    Suche nach einem Wort in der Strong-Konkordanz.
-    language: 'hebrew', 'greek' oder '' (beide)
-    """
-    if not strong_manager.is_loaded:
-        raise HTTPException(status_code=503, detail="Strong-Konkordanz noch nicht geladen")
-
-    if not word or len(word.strip()) < 2:
-        raise HTTPException(status_code=400, detail="Suchbegriff muss mindestens 2 Zeichen lang sein")
-
-    results = strong_manager.search_by_word(word.strip(), language)
-
-    return {
-        "query": word,
-        "language": language or "all",
-        "total": len(results),
-        "results": [strong_manager.entry_to_dict(e) for e in results[:50]],
-    }
-
-
-@app.get("/api/{translation}/{book}")
-async def get_book(translation: str, book: str):
-    """Get entire book with all chapters and verses"""
-    bible = bible_manager.get_bible(translation)
-    if not bible:
-        raise HTTPException(status_code=404, detail=f"Translation '{translation}' not found")
-    
-    book_data = bible.get_book(book)
-    if book_data is None:
-        raise HTTPException(status_code=404, detail=f"Book '{book}' not found in {translation}")
-    
-    return BookResponse(
-        book=book,
-        chapters=book_data,
-        translation=translation
-    )
-
-@app.get("/api/{translation}/{book}/{chapter:int}")
-async def get_chapter(translation: str, book: str, chapter: int):
-    """Get specific chapter with all verses"""
-    bible = bible_manager.get_bible(translation)
-    if not bible:
-        raise HTTPException(status_code=404, detail=f"Translation '{translation}' not found")
-    
-    chapter_data = bible.get_chapter(book, chapter)
-    if chapter_data is None:
-        raise HTTPException(status_code=404, detail=f"Chapter {chapter} not found in {book} ({translation})")
-    
-    return ChapterResponse(
-        book=book,
-        chapter=chapter,
-        verses=chapter_data,
-        translation=translation
-    )
-
-@app.get("/api/{translation}/{book}/{chapter:int}/{verse:int}")
-async def get_verse(translation: str, book: str, chapter: int, verse: int):
-    """Get specific verse"""
-    bible = bible_manager.get_bible(translation)
-    if not bible:
-        raise HTTPException(status_code=404, detail=f"Translation '{translation}' not found")
-    
-    verse_text = bible.get_verse(book, chapter, verse)
-    if verse_text is None:
-        raise HTTPException(status_code=404, detail=f"Verse {verse} not found in {book} {chapter} ({translation})")
-    
-    return VerseResponse(
-        book=book,
-        chapter=chapter,
-        verse=verse,
-        text=verse_text,
-        translation=translation
-    )
 
 @app.get("/api/{translation}/{book}/chapters")
-async def get_chapter_list(translation: str, book: str):
+async def get_chapter_list(
+    translation: str,
+    book: str,
+    bm: BibleManager = Depends(get_bible_manager),
+):
     """Get list of chapters in a book"""
-    bible = bible_manager.get_bible(translation)
+    bible = bm.get_bible(translation)
     if not bible:
         raise HTTPException(status_code=404, detail=f"Translation '{translation}' not found")
-    
+
     if book not in bible.books:
         raise HTTPException(status_code=404, detail=f"Book '{book}' not found in {translation}")
-    
+
     chapters = []
     for chapter_num in sorted(bible.books[book].keys()):
         chapters.append({
             "chapter": chapter_num,
             "verses": bible.get_verse_count(book, chapter_num)
         })
-    
+
     return {"translation": translation, "book": book, "chapters": chapters}
 
+
 @app.get("/api/{translation}/{book}/chapter-count")
-async def get_chapter_count(translation: str, book: str):
+async def get_chapter_count(
+    translation: str,
+    book: str,
+    bm: BibleManager = Depends(get_bible_manager),
+):
     """Get number of chapters in a book (used by count.html)"""
-    bible = bible_manager.get_bible(translation)
+    bible = bm.get_bible(translation)
     if not bible:
         raise HTTPException(status_code=404, detail=f"Translation '{translation}' not found")
 
@@ -248,9 +256,14 @@ async def get_chapter_count(translation: str, book: str):
 
 
 @app.get("/api/{translation}/{book}/{chapter:int}/verse-count")
-async def get_verse_count(translation: str, book: str, chapter: int):
+async def get_verse_count(
+    translation: str,
+    book: str,
+    chapter: int,
+    bm: BibleManager = Depends(get_bible_manager),
+):
     """Get number of verses in a chapter (used by count.html)"""
-    bible = bible_manager.get_bible(translation)
+    bible = bm.get_bible(translation)
     if not bible:
         raise HTTPException(status_code=404, detail=f"Translation '{translation}' not found")
 
@@ -265,22 +278,95 @@ async def get_verse_count(translation: str, book: str, chapter: int):
     }
 
 
+@app.get("/api/{translation}/{book}/{chapter:int}/{verse:int}")
+async def get_verse(
+    translation: str,
+    book: str,
+    chapter: int,
+    verse: int,
+    bm: BibleManager = Depends(get_bible_manager),
+):
+    """Get specific verse"""
+    bible = bm.get_bible(translation)
+    if not bible:
+        raise HTTPException(status_code=404, detail=f"Translation '{translation}' not found")
+
+    verse_text = bible.get_verse(book, chapter, verse)
+    if verse_text is None:
+        raise HTTPException(status_code=404, detail=f"Verse {verse} not found in {book} {chapter} ({translation})")
+
+    return VerseResponse(
+        book=book,
+        chapter=chapter,
+        verse=verse,
+        text=verse_text,
+        translation=translation
+    )
+
+
+@app.get("/api/{translation}/{book}/{chapter:int}")
+async def get_chapter(
+    translation: str,
+    book: str,
+    chapter: int,
+    bm: BibleManager = Depends(get_bible_manager),
+):
+    """Get specific chapter with all verses"""
+    bible = bm.get_bible(translation)
+    if not bible:
+        raise HTTPException(status_code=404, detail=f"Translation '{translation}' not found")
+
+    chapter_data = bible.get_chapter(book, chapter)
+    if chapter_data is None:
+        raise HTTPException(status_code=404, detail=f"Chapter {chapter} not found in {book} ({translation})")
+
+    return ChapterResponse(
+        book=book,
+        chapter=chapter,
+        verses=chapter_data,
+        translation=translation
+    )
+
+
+@app.get("/api/{translation}/{book}")
+async def get_book(
+    translation: str,
+    book: str,
+    bm: BibleManager = Depends(get_bible_manager),
+):
+    """Get entire book with all chapters and verses"""
+    bible = bm.get_bible(translation)
+    if not bible:
+        raise HTTPException(status_code=404, detail=f"Translation '{translation}' not found")
+
+    book_data = bible.get_book(book)
+    if book_data is None:
+        raise HTTPException(status_code=404, detail=f"Book '{book}' not found in {translation}")
+
+    return BookResponse(
+        book=book,
+        chapters=book_data,
+        translation=translation
+    )
+
+
 @app.get("/api/search")
 async def search_bible(
     q: str,
-    translation: str = None,
-    book: str = None,
+    translation: Optional[str] = None,
+    book: Optional[str] = None,
     page: int = 1,
     limit: int = 20,
+    bm: BibleManager = Depends(get_bible_manager),
 ):
     """Search for verses containing the query string"""
     if not q or len(q.strip()) < 2:
         raise HTTPException(
-            status_code=400, 
+            status_code=400,
             detail="Search query must be at least 2 characters long"
         )
 
-    search_results = bible_manager.search_bible(
+    search_results = bm.search_bible(
         query=q.strip(),
         translation=translation,
         book=book,
@@ -298,7 +384,8 @@ async def search_bible(
         "translation": translation,
         "book":    book,
     }
-        
+
+
 @app.get("/api/count")
 async def count_words(
     translation: str,
@@ -308,6 +395,9 @@ async def count_words(
     book_to: str,
     chapter_to: int,
     verse_to: int,
+    bm: BibleManager = Depends(get_bible_manager),
+    ignore_de: set = Depends(get_ignore_words_de),
+    ignore_en: set = Depends(get_ignore_words_en),
 ):
     """Count word frequencies in a range from (book_from, chapter_from, verse_from)
     to (book_to, chapter_to, verse_to), inclusive. Used by count.html."""
@@ -317,7 +407,7 @@ async def count_words(
     book_from   = book_from.replace("+", " ")
     book_to     = book_to.replace("+", " ")
 
-    bible = bible_manager.get_bible(translation)
+    bible = bm.get_bible(translation)
     if not bible:
         raise HTTPException(status_code=404, detail=f"Translation '{translation}' not found")
 
@@ -351,9 +441,9 @@ async def count_words(
 
     # Ignore-Liste passend zur Übersetzungssprache wählen
     ignore_list = (
-        IGNORE_WORDS_EN
+        ignore_en
         if translation.upper() in ENGLISH_TRANSLATIONS
-        else IGNORE_WORDS_DE
+        else ignore_de
     )
 
     counted_words = []
@@ -382,7 +472,6 @@ async def count_words(
         "counted_words": counted_words,
         "ignored_words": ignored_words,
     }
-    
 
 
 if __name__ == "__main__":
