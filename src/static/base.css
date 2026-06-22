@@ -1,0 +1,125 @@
+/* ================================================================
+   pyble – gemeinsames Stylesheet (base.css)
+   Wird von base.html eingebunden; alle seitenspezifischen Stile
+   leben weiterhin als <style>-Block in den jeweiligen Templates.
+   ================================================================ */
+
+/* Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Ubuntu Color Variables */
+:root {
+    --ubuntu-orange:    #dd4814;
+    --ubuntu-aubergine: #77292b;
+    --ubuntu-warm-grey: #aea79f;
+    --ubuntu-light-grey:#f7f7f7;
+    --ubuntu-dark-grey: #454545;
+    --ubuntu-white:     #ffffff;
+    --ubuntu-text:      #2c001e;
+}
+
+body {
+    font-family: 'Ubuntu', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: var(--ubuntu-text);
+    background: var(--ubuntu-light-grey);
+    min-height: 100vh;
+}
+
+/* ── Navigation ── */
+.nav-header {
+    background: var(--ubuntu-aubergine);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.nav-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 60px;
+}
+
+.nav-logo {
+    color: var(--ubuntu-white);
+    font-size: 1.5rem;
+    font-weight: 300;
+    text-decoration: none;
+}
+
+.nav-menu {
+    display: flex;
+    list-style: none;
+    gap: 0;
+}
+
+.nav-item a {
+    color: var(--ubuntu-white);
+    text-decoration: none;
+    padding: 20px 16px;
+    display: block;
+    transition: background-color 0.2s ease;
+    font-weight: 300;
+}
+
+.nav-item a:hover,
+.nav-item a.active {
+    background: var(--ubuntu-orange);
+}
+
+/* ── Burger-Menü ── */
+.burger-menu {
+    display: none;
+    flex-direction: column;
+    cursor: pointer;
+    padding: 5px;
+}
+
+.burger-line {
+    width: 25px;
+    height: 3px;
+    background: var(--ubuntu-white);
+    margin: 3px 0;
+    transition: 0.3s;
+}
+
+@media (max-width: 768px) {
+    .nav-menu {
+        position: fixed;
+        left: -100%;
+        top: 60px;
+        flex-direction: column;
+        background: var(--ubuntu-aubergine);
+        width: 100%;
+        text-align: center;
+        transition: 0.3s;
+        box-shadow: 0 10px 27px rgba(0,0,0,0.05);
+    }
+
+    .nav-menu.active { left: 0; }
+
+    .nav-item {
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .nav-item:last-child { border-bottom: none; }
+
+    .burger-menu { display: flex; }
+
+    .burger-menu.active .burger-line:nth-child(2) { opacity: 0; }
+    .burger-menu.active .burger-line:nth-child(1) { transform: translateY(9px) rotate(45deg); }
+    .burger-menu.active .burger-line:nth-child(3) { transform: translateY(-9px) rotate(-45deg); }
+}
+
+/* ── Ubuntu-style transitions (global) ── */
+* {
+    transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}

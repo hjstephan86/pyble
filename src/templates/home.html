@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% set active_page = "home" %}
+
+{% block title %}Die Bibel - Startseite{% endblock %}
+
+{% block head_extra %}
+<style>
+    .hero-section {
+        background: linear-gradient(135deg, var(--ubuntu-aubergine) 0%, #5a1f21 100%);
+        color: var(--ubuntu-white);
+        padding: 4rem 0;
+        text-align: center;
+    }
+    .hero-content { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+    .hero-title { font-size: 3rem; font-weight: 300; margin-bottom: 1rem; }
+    .hero-subtitle { font-size: 1.3rem; font-weight: 300; margin-bottom: 2rem; opacity: 0.9; }
+    .hero-description { font-size: 1.1rem; max-width: 600px; margin: 0 auto 3rem; opacity: 0.8; }
+    .cta-buttons { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; }
+    .cta-button {
+        background: var(--ubuntu-orange); color: var(--ubuntu-white);
+        padding: 1rem 2rem; text-decoration: none; border-radius: 4px;
+        font-weight: 400; transition: all 0.2s ease; display: inline-block;
+    }
+    .cta-button:hover { background: #c73e0f; transform: translateY(-2px); }
+    .cta-button.secondary { background: transparent; border: 2px solid var(--ubuntu-white); }
+    .cta-button.secondary:hover { background: var(--ubuntu-white); color: var(--ubuntu-aubergine); }
+
+    .features-section { padding: 4rem 0; background: var(--ubuntu-white); }
+    .features-container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+    .features-title { text-align: center; font-size: 2.5rem; font-weight: 300; color: var(--ubuntu-aubergine); margin-bottom: 3rem; }
+    .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; }
+    .feature-card {
+        background: var(--ubuntu-light-grey); padding: 2rem; border-radius: 8px;
+        text-align: center; border-left: 4px solid var(--ubuntu-orange); transition: all 0.3s ease;
+    }
+    .feature-card:hover { transform: translateY(-5px); box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+    .feature-icon { font-size: 3rem; color: var(--ubuntu-orange); margin-bottom: 1rem; }
+    .feature-title { font-size: 1.5rem; font-weight: 400; color: var(--ubuntu-aubergine); margin-bottom: 1rem; }
+    .feature-description { color: var(--ubuntu-dark-grey); line-height: 1.6; }
+    .feature-link { display: inline-block; margin-top: 1rem; color: var(--ubuntu-orange); text-decoration: none; font-weight: 400; }
+    .feature-link:hover { color: var(--ubuntu-aubergine); }
+
+    .stats-section { padding: 3rem 0; background: var(--ubuntu-light-grey); }
+    .stats-container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; text-align: center; }
+    .stat-item { padding: 1.5rem; }
+    .stat-number { font-size: 2.5rem; font-weight: 300; color: var(--ubuntu-orange); display: block; }
+    .stat-label { color: var(--ubuntu-dark-grey); font-size: 1rem; margin-top: 0.5rem; }
+
+    @media (max-width: 768px) {
+        .hero-title    { font-size: 2.5rem; }
+        .hero-subtitle { font-size: 1.1rem; }
+        .cta-buttons   { flex-direction: column; align-items: center; }
+        .cta-button    { width: 200px; text-align: center; }
+        .features-title { font-size: 2rem; }
+        .features-grid  { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <section class="hero-section">
+        <div class="hero-content">
+            <h1 class="hero-title">Die Bibel</h1>
+            <p class="hero-subtitle">Entdecken Sie das Wort Gottes in verschiedenen Übersetzungen</p>
+            <p class="hero-description">
+                Eine moderne und benutzerfreundliche Plattform zum Lesen, Suchen und Studieren der Heiligen Schrift.
+                Verfügbar in mehreren deutschen Übersetzungen mit erweiterten Suchfunktionen.
+            </p>
+            <div class="cta-buttons">
+                <a href="read.html" class="cta-button">Jetzt lesen</a>
+                <a href="search.html" class="cta-button secondary">In der Bibel suchen</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="features-section">
+        <div class="features-container">
+            <h2 class="features-title">Funktionen</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📖</div>
+                    <h3 class="feature-title">Bibel lesen</h3>
+                    <p class="feature-description">Lesen Sie die Bibel kapitelweise in verschiedenen deutschen Übersetzungen. Einfache Navigation zwischen Büchern und Kapiteln.</p>
+                    <a href="read.html" class="feature-link">Zum Lesen →</a>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔍</div>
+                    <h3 class="feature-title">Volltextsuche</h3>
+                    <p class="feature-description">Durchsuchen Sie die gesamte Bibel nach Wörtern, Phrasen oder Themen. Erweiterte Suchoptionen für präzise Ergebnisse.</p>
+                    <a href="search.html" class="feature-link">Jetzt suchen →</a>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3 class="feature-title">Wörter zählen</h3>
+                    <p class="feature-description">Analysieren Sie die Häufigkeit von Wörtern in der Bibel. Nützlich für Bibelstudium und theologische Recherche.</p>
+                    <a href="count.html" class="feature-link">Wörter zählen →</a>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💪</div>
+                    <h3 class="feature-title">Strong-Nummern</h3>
+                    <p class="feature-description">Zugriff auf Strong-Konkordanz für tiefere Wortanalyse. Verstehen Sie die ursprünglichen hebräischen und griechischen Bedeutungen.</p>
+                    <a href="strong.html" class="feature-link">Strong-Nummern →</a>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚖️</div>
+                    <h3 class="feature-title">Parallelvergleich</h3>
+                    <p class="feature-description">Vergleichen Sie verschiedene Übersetzungen nebeneinander. Ideal für detailliertes Bibelstudium und Textvergleiche.</p>
+                    <a href="parallel.html" class="feature-link">Vergleichen →</a>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">ℹ️</div>
+                    <h3 class="feature-title">Über das Projekt</h3>
+                    <p class="feature-description">Erfahren Sie mehr über dieses Projekt, die verwendeten Übersetzungen und wie Sie zur Weiterentwicklung beitragen können.</p>
+                    <a href="about.html" class="feature-link">Mehr erfahren →</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="stats-section">
+        <div class="stats-container">
+            <div class="stats-grid">
+                <div class="stat-item"><span class="stat-number">66</span><span class="stat-label">Bücher der Bibel</span></div>
+                <div class="stat-item"><span class="stat-number">1.189</span><span class="stat-label">Kapitel insgesamt</span></div>
+                <div class="stat-item"><span class="stat-number">~31.000</span><span class="stat-label">Verse insgesamt</span></div>
+                <div class="stat-item"><span class="stat-number">Mehrere</span><span class="stat-label">Deutsche Übersetzungen</span></div>
+            </div>
+        </div>
+    </section>
+{% endblock %}
