@@ -469,6 +469,12 @@
             margin-right: 0.5rem;
         }
 
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
         .usage-table {
             width: 100%;
             border-collapse: collapse;
@@ -674,14 +680,6 @@
 
 {% block scripts %}
 <script>
-// ── Navigation ──────────────────────────────────────────────────
-        const burgerMenu = document.getElementById('burger-menu');
-        const navMenu    = document.getElementById('nav-menu');
-        burgerMenu.addEventListener('click', () => {
-            burgerMenu.classList.toggle('active');
-            navMenu.classList.toggle('active');
-        });
-
         // ── Popup ────────────────────────────────────────────────────────
         function openRefPopup(title, intro, refs) {
             document.getElementById('popupTitle').textContent = title;
@@ -812,7 +810,7 @@
                               "${esc(data.strong_number)} – ${esc(u.german_word)}",
                               "${esc(u.german_word)} kommt ${u.count}× in Luther 1912 vor (${esc(data.title)}).",
                               ${JSON.stringify(refs)}
-                           )'>Stellen anzeigen (${refs.length})</button>`
+                           )'>zeige (${refs.length})</button>`
                         : `<span class="count-pill">${u.count}</span>`;
                     rows += `<tr>
                         <td><strong>${esc(u.german_word)}</strong></td>
@@ -829,6 +827,7 @@
                             <strong>${esc(data.title)}</strong>
                             &nbsp;·&nbsp; ${data.total_count} Vorkommen in Luther 1912
                         </div>
+                        <div class="table-responsive">
                         <table class="usage-table">
                             <thead><tr>
                                 <th>Deutsches Wort</th>
@@ -837,6 +836,7 @@
                             </tr></thead>
                             <tbody>${rows}</tbody>
                         </table>
+                        </div>
                     </div>`;
             }
 
